@@ -43,8 +43,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#ifndef __GST_TEMPLATEMATCH_H__
-#define __GST_TEMPLATEMATCH_H__
+#ifndef __GST_IMGSPOT_H__
+#define __GST_IMGSPOT_H__
 
 #include <gst/gst.h>
 #include <cv.h>
@@ -52,41 +52,36 @@
 
 G_BEGIN_DECLS
 /* #defines don't like whitespacey bits */
-#define GST_TYPE_TEMPLATEMATCH \
-  (gst_templatematch_get_type())
-#define GST_TEMPLATEMATCH(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_TEMPLATEMATCH,GstTemplateMatch))
-#define GST_TEMPLATEMATCH_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_TEMPLATEMATCH,GstTemplateMatchClass))
-#define GST_IS_TEMPLATEMATCH(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_TEMPLATEMATCH))
-#define GST_IS_TEMPLATEMATCH_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_TEMPLATEMATCH))
-typedef struct _GstTemplateMatch GstTemplateMatch;
-typedef struct _GstTemplateMatchClass GstTemplateMatchClass;
+#define GST_TYPE_IMGSPOT \
+  (gst_imgspot_get_type())
+#define GST_IMGSPOT(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_IMGSPOT,GstImgSpot))
+#define GST_IMGSPOT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_IMGSPOT,GstImgSpotClass))
+#define GST_IS_IMGSPOT(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_IMGSPOT))
+#define GST_IS_IMGSPOT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_IMGSPOT))
+typedef struct _GstImgSpot GstImgSpot;
+typedef struct _GstImgSpotClass GstImgSpotClass;
 
-struct _GstTemplateMatch
+struct _GstImgSpot
 {
   GstElement element;
-
   GstPad *sinkpad, *srcpad;
 
-  gint method;
-  gboolean display;
-
-  gchar *template;
-
-  IplImage *cvImage, *cvGray, *cvTemplateImage, *cvDistImage;
+  gchar *algorithm;
+  gchar *imgdir;
 };
 
-struct _GstTemplateMatchClass
+struct _GstImgSpotClass
 {
   GstElementClass parent_class;
 };
 
-GType gst_templatematch_get_type (void);
+GType gst_imgspot_get_type(void);
 
-gboolean gst_templatematch_plugin_init (GstPlugin * templatematch);
+gboolean gst_imgspot_plugin_init (GstPlugin * imgspot);
 
 G_END_DECLS
-#endif /* __GST_TEMPLATEMATCH_H__ */
+#endif /* __GST_IMGSPOT_H__ */

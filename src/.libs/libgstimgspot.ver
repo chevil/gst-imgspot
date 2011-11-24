@@ -1,4 +1,4 @@
 { global:
-gst_templatematch_get_type;
-gst_templatematch_plugin_init;
+gst_imgspot_get_type;
+gst_imgspot_plugin_init;
 local: *; };
