@@ -50,7 +50,7 @@
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch filesrc location=../data/slides.mp4  ! decodebin ! imgspot imgdir=./data/images algorithm=histogram ! ffmpegcolorspace ! xvimagesink
+ * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot imgdir=data/images algorithm=histogram ! ffmpegcolorspace ! xvimagesink
  * ]|
  * </refsect2>
  */
@@ -287,3 +287,20 @@ gst_imgspot_plugin_init (GstPlugin * imgspot)
 
   return gst_element_register (imgspot, "imgspot", GST_RANK_NONE, GST_TYPE_IMGSPOT);
 }
+
+static gboolean
+plugin_init (GstPlugin * plugin)
+{
+  if (!gst_imgspot_plugin_init (plugin))
+    return FALSE;
+
+  return TRUE;
+}
+
+GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
+    GST_VERSION_MINOR,
+    "imgspot",
+    "GStreamer OpenCV Image Recogniton",
+    plugin_init, VERSION, "LGPL", "ImgSpot", "http://giss.tv")
+
+

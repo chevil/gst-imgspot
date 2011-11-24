@@ -43,6 +43,17 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/**
+ * SECTION:element-imgspot
+ *
+ * <refsect2>
+ * <title>Example launch line</title>
+ * |[
+ * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot imgdir=data/images algorithm=histogram ! ffmpegcolorspace ! xvimagesink
+ * ]|
+ * </refsect2>
+ */
+
 #ifndef __GST_IMGSPOT_H__
 #define __GST_IMGSPOT_H__
 
