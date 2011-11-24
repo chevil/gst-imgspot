@@ -1,0 +1,12 @@
+This is a gstreamer plugin for recognition
+of specific images in a video stream.
+
+The video stream can be a video file 
+or a video stream
+and the collection of images 
+can be changed dynamically 
+sending a message to the plugin.
+
+The plugin uses OpenCV for the recognition of images.
+
+For any more information or support, contact ydegoyon@gmail.com.
