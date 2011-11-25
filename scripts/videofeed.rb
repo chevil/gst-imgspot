@@ -3,7 +3,7 @@
 require 'gst'
 require 'readline'
 
-raise "Usage: #{$0} video imgdir [algorithm]" unless(ARGV.length>=2)
+raise "Usage: #{$0} videofile imagesdir [algorithm=histogram] [tolerance=0.10]" unless(ARGV.length>=2)
 
 video=ARGV[0]
 imgdir=ARGV[1]
@@ -12,6 +12,12 @@ if ( ARGV.length == 3 )
   algorithm=ARGV[2]
 else
   algorithm = 'histogram'
+end
+
+if ( ARGV.length == 4 )
+  tolerance=ARGV[3]
+else
+  tolerance = 0.1 
 end
 
 Gst::init()
@@ -25,13 +31,17 @@ def start_pipe(video,imgdir,algorithm)
   end
 
   cmd=<<-eof
-    filesrc location=#{video}  ! decodebin ! ffmpegcolorspace ! imgspot imgdir=#{imgdir} algorithm=#{algorithm} ! ffmpegcolorspace ! sdlvideosink
+    filesrc location=#{video}  ! decodebin ! ffmpegcolorspace ! imgspot imgdir=#{imgdir} algorithm=#{algorithm} tolerance=#{tolerance} ! ffmpegcolorspace ! sdlvideosink
   eof
 
   $pip=Gst::Parse::launch(cmd)
 
   bus=$pip.bus
   bus.add_watch() do |bus,message|
+    puts message.type.name
+    puts message.source
+    puts message.structure
+    puts
     case message.type
     when Gst::Message::EOS
       STDERR.puts("End of file")
@@ -50,6 +60,6 @@ end
 start_pipe(video,imgdir,algorithm)
 
 
-while imgdir = Readline.readline('Enter new image directory> ', true)
+while imgdir = Readline.readline('Enter new image directory > ', true)
   start_pipe(video,imgdir,algorithm)
 end

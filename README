@@ -9,18 +9,26 @@ sending a message to the plugin.
 
 The plugin uses OpenCV for the recognition of images.
 
+The plugin uses OpenCV for the recognition of images.
+
 To use it on Ubuntu, first install the dependencies :
-sudo apt-get install gstreamer-0.10 gstreamer-base-0.10 gstreamer-plugins-base-0.10 opencv libgst-ruby
+> sudo apt-get install gstreamer-0.10 gstreamer-base-0.10 gstreamer-plugins-base-0.10 opencv libgst-ruby
 
 Then compile the plugins with :
 
-sudo ./configure --prefix=/usr
-sudo make
-sudo make-install
+> sudo ./configure --prefix=/usr
+> sudo make
+> sudo make install
 
-Then launch it with a pipe like :
+Then go to the script directory and launch the analysis of a video with :
 
-gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot imgdir=data/images algorithm=histogram ! ffmpegcolorspace ! xvimagesink
+> cd scripts
+> ruby videofeed.rb ../data/slides.mp4 ../data/images
+
+this script takes two additional optional arguments :
+
+* algorithm [ 'histogram' by default ] : algorithm used for destection
+* tolerance [ 0.10 by default ] : distance tolerance to detect an image
 
 For any more information or support, contact ydegoyon@gmail.com.
 Developped for Kognate, inc.
