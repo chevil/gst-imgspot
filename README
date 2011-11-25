@@ -10,7 +10,7 @@ sending a message to the plugin.
 The plugin uses OpenCV for the recognition of images.
 
 To use it on Ubuntu, first install the dependencies :
-sudo apt-get install gstreamer-0.10 gstreamer-base-0.10 gstreamer-plugins-base-0.10 opencv
+sudo apt-get install gstreamer-0.10 gstreamer-base-0.10 gstreamer-plugins-base-0.10 opencv libgst-ruby
 
 Then compile the plugins with :
 

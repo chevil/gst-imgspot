@@ -186,6 +186,7 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
       break;
     case PROP_IMGDIR:
       filter->imgdir = (char *) g_value_get_string (value);
+      printf( "gstimgspot : Loading images from : %s.\n", filter->imgdir);
       gst_imgspot_load_images (filter);
       break;
     default:
@@ -256,6 +257,8 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
   filter = GST_IMGSPOT (GST_OBJECT_PARENT (pad));
 
   if ((!filter) || (!buf) || filter->imgdir == NULL) {
+    GST_ERROR ("imgdir is null" );
+    printf( "gstimgspot : ERROR : imgdir is null\n");
     return GST_FLOW_OK;
   }
 
