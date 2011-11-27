@@ -5,33 +5,33 @@ require 'readline'
 
 raise "Usage: #{$0} videofile imagesdir [algorithm=histogram] [tolerance=0.10]" unless(ARGV.length>=2)
 
-video=ARGV[0]
-imgdir=ARGV[1]
+$video=ARGV[0]
+$imgdir=ARGV[1]
 
 if ( ARGV.length == 3 )
-  algorithm=ARGV[2]
+  $algorithm=ARGV[2]
 else
-  algorithm = 'histogram'
+  $algorithm = 'histogram'
 end
 
 if ( ARGV.length == 4 )
-  tolerance=ARGV[3]
+  $tolerance=ARGV[3]
 else
-  tolerance = 0.1 
+  $tolerance = 0.1 
 end
 
 Gst::init()
 loop=GLib::MainLoop::new(nil,false)
 $pip=nil
 
-def start_pipe(video,imgdir,algorithm)
+def start_pipe(video,imgdir,algorithm,tolerance)
 
   if ( $pip != nil )
     $pip.stop
   end
 
   cmd=<<-eof
-    filesrc location=#{video}  ! decodebin ! ffmpegcolorspace ! imgspot imgdir=#{imgdir} algorithm=#{algorithm} tolerance=#{tolerance} ! ffmpegcolorspace ! sdlvideosink
+    filesrc location=#{video}  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 imgdir=#{imgdir} algorithm=#{algorithm} tolerance=#{tolerance} ! ffmpegcolorspace ! sdlvideosink
   eof
 
   $pip=Gst::Parse::launch(cmd)
@@ -57,9 +57,9 @@ def start_pipe(video,imgdir,algorithm)
 
 end
 
-start_pipe(video,imgdir,algorithm)
+start_pipe($video,$imgdir,$algorithm,$tolerance)
 
 
-while imgdir = Readline.readline('Enter new image directory > ', true)
-  start_pipe(video,imgdir,algorithm)
+while $imgdir = Readline.readline('Enter new image directory > ', true)
+  start_pipe($video,$imgdir,$algorithm,$tolerance)
 end

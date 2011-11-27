@@ -81,8 +81,16 @@ struct _GstImgSpot
   GstElement element;
   GstPad *sinkpad, *srcpad;
 
+  // width and height used to compare images
+  // that could be of any size
+  // so the firt thing to do is to resize them
+  gint width;
+  gint height;
+
   gchar *algorithm;
   gchar *imgdir;
+
+  gfloat tolerance;
 };
 
 struct _GstImgSpotClass

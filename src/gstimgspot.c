@@ -67,12 +67,18 @@ GST_DEBUG_CATEGORY_STATIC (gst_imgspot_debug);
 #define GST_CAT_DEFAULT gst_imgspot_debug
 
 #define DEFAULT_ALGORITHM "histogram"
+#define DEFAULT_WIDTH 320
+#define DEFAULT_HEIGHT 240 
+#define DEFAULT_TOLERANCE 0.10 
 
 enum
 {
   PROP_0,
   PROP_ALGORITHM,
-  PROP_IMGDIR
+  PROP_IMGDIR,
+  PROP_WIDTH,
+  PROP_HEIGHT,
+  PROP_TOLERANCE
 };
 
 /* the capabilities of the inputs and outputs.
@@ -143,6 +149,12 @@ gst_imgspot_class_init (GstImgSpotClass * klass)
   g_object_class_install_property (gobject_class, PROP_IMGDIR,
       g_param_spec_string ("imgdir", "Imgdir", "Directory of images collection.",
           NULL, G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, PROP_WIDTH,
+      g_param_spec_int ("width", "Width", "Width of the resized image for comparison.", 32, 1024, 320, G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, PROP_HEIGHT,
+      g_param_spec_int ("height", "Height", "Height of the resized image for comparison.", 32, 1024, 320, G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, PROP_TOLERANCE,
+      g_param_spec_float ("tolerance", "Tolerance", "Absolute tolerance for the comparison.", 0.1, 100, 0.1, G_PARAM_READWRITE));
 }
 
 /* initialize the new element
@@ -172,6 +184,9 @@ gst_imgspot_init (GstImgSpot * filter,
   filter->algorithm = (char*) malloc( strlen(DEFAULT_ALGORITHM)+1 );;
   strcpy( filter->algorithm, DEFAULT_ALGORITHM );
   gst_imgspot_load_images (filter);
+  filter->width = DEFAULT_WIDTH;
+  filter->height = DEFAULT_HEIGHT;
+  filter->tolerance = DEFAULT_TOLERANCE;
 }
 
 static void
@@ -179,15 +194,49 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
   GstImgSpot *filter = GST_IMGSPOT (object);
+  int nwidth, nheight;
+  float ntolerance;
 
   switch (prop_id) {
     case PROP_ALGORITHM:
+      if ( strcmp( (char *) g_value_get_string (value), "histogram" ) != 0 )
+      {
+         printf( "gstimgspot : wrong algorithm : %s.\n", (char *) g_value_get_string (value));
+         break;
+      }
       filter->algorithm = (char *) g_value_get_string (value);
       break;
     case PROP_IMGDIR:
       filter->imgdir = (char *) g_value_get_string (value);
       printf( "gstimgspot : Loading images from : %s.\n", filter->imgdir);
       gst_imgspot_load_images (filter);
+      break;
+    case PROP_WIDTH:
+      nwidth = g_value_get_int (value);
+      if ( nwidth < 32 )
+      {
+         printf( "gstimgspot : invalid width : %d.\n", nwidth);
+         break;
+      }
+      filter->width = nwidth;
+      break;
+    case PROP_HEIGHT:
+      nheight = g_value_get_int (value);
+      if ( nheight < 32 )
+      {
+         printf( "gstimgspot : invalid height : %d.\n", nheight);
+         break;
+      }
+      filter->height = nheight;
+      break;
+    case PROP_TOLERANCE:
+      ntolerance = g_value_get_float (value);
+      if ( ntolerance < 0.1 )
+      {
+         printf( "gstimgspot : invalid tolerance : %f.\n", ntolerance);
+         break;
+      }
+      filter->tolerance = ntolerance;
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -207,6 +256,15 @@ gst_imgspot_get_property (GObject * object, guint prop_id,
       break;
     case PROP_IMGDIR:
       g_value_set_string (value, filter->imgdir);
+      break;
+    case PROP_WIDTH:
+      g_value_set_int (value, filter->width);
+      break;
+    case PROP_HEIGHT:
+      g_value_set_int (value, filter->height);
+      break;
+    case PROP_TOLERANCE:
+      g_value_set_float (value, filter->tolerance);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
