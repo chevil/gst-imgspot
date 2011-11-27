@@ -211,10 +211,12 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
          printf( "gstimgspot : wrong algorithm : %s.\n", (char *) g_value_get_string (value));
          break;
       }
-      filter->algorithm = (char *) g_value_get_string (value);
+      filter->algorithm = (char *) malloc( strlen ( (char *) g_value_get_string (value) ) + 1 );
+      strcpy( filter->algorithm, (char *) g_value_get_string (value) );
       break;
     case PROP_IMGDIR:
-      filter->imgdir = (char *) g_value_get_string (value);
+      filter->imgdir = (char *) malloc( strlen( (char *) g_value_get_string (value) ) + 1 );
+      strcpy( filter->imgdir, (char *) g_value_get_string (value) );
       printf( "gstimgspot : Loading images from : %s.\n", filter->imgdir);
       gst_imgspot_load_images (filter);
       break;
@@ -296,6 +298,7 @@ gst_imgspot_set_caps (GstPad * pad, GstCaps * caps)
   gst_structure_get_int (structure, "height", &height);
 
   filter->incomingImage = cvCreateImageHeader (cvSize (width, height), IPL_DEPTH_8U, 3);
+  filter->previousImage = cvCreateImage (cvSize (width, height), IPL_DEPTH_8U, 3);
 
   otherpad = (pad == filter->srcpad) ? filter->sinkpad : filter->srcpad;
   gst_object_unref (filter);
@@ -311,6 +314,9 @@ gst_imgspot_finalize (GObject * object)
 
   if (filter->incomingImage) {
     cvReleaseImageHeader (&filter->incomingImage);
+  }
+  if (filter->previousImage) {
+    cvReleaseImage (&filter->previousImage);
   }
 
 }
@@ -335,13 +341,25 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
     printf( "gstimgspot : ERROR : imgdir is null\n");
     return GST_FLOW_OK;
   }
+
   
   filter->incomingImage->imageData = (char *) GST_BUFFER_DATA (buf);
+
+  if ( memcmp( (char *) GST_BUFFER_DATA (buf), filter->previousImage->imageData, 3*filter->previousImage->width*filter->previousImage->height ) == 0 )
+  {
+     printf( "gstimgspot : same frame found ... skipping\n");
+     return gst_pad_push (filter->srcpad, buf);
+  }
+
+  // memorize the frame
+  memcpy( filter->previousImage->imageData, (char *) GST_BUFFER_DATA (buf), 3*filter->previousImage->width*filter->previousImage->height );
+
+  // process the new frame
   resized_image = cvCreateImage(cvSize(filter->width,filter->height), filter->incomingImage->depth, filter->incomingImage->nChannels);
   // resize the image
   cvResize( filter->incomingImage, resized_image, CV_INTER_LINEAR );
 
-  // if ( strcmp( filter->algorithm, "histogram" ) == 0 )
+  if ( strcmp( filter->algorithm, "histogram" ) == 0 )
   {
      // calculate histogram and compare it
      {
@@ -409,7 +427,6 @@ gst_imgspot_match (IplImage * input, double *lower_dist)
 static void
 gst_imgspot_load_images (GstImgSpot * filter)
 {
-
 
   if (filter->imgdir == NULL) {
     GST_ERROR ("imgdir is null" );

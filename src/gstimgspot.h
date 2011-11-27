@@ -98,6 +98,7 @@ struct _GstImgSpot
   CvHistogram **loaded_hist;
 
   IplImage *incomingImage;
+  IplImage *previousImage;
 
 };
 
