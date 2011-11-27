@@ -31,7 +31,7 @@ def start_pipe(video,imgdir,algorithm,tolerance)
   end
 
   cmd=<<-eof
-    filesrc location=#{video}  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 imgdir=#{imgdir} algorithm=#{algorithm} tolerance=#{tolerance} ! ffmpegcolorspace ! sdlvideosink
+    filesrc location=#{video}  ! decodebin ! ffmpegcolorspace ! imgspot width=640 height=480 imgdir=#{imgdir} algorithm=#{algorithm} tolerance=#{tolerance} ! ffmpegcolorspace ! sdlvideosink
   eof
 
   $pip=Gst::Parse::launch(cmd)

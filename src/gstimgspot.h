@@ -93,8 +93,9 @@ struct _GstImgSpot
   gfloat tolerance;
 
   // pointers to data for loaded images
-  int nb_loaded_images;
-  char **loaded_images;
+  gint nb_loaded_images;
+  gint previous;
+  gchar **loaded_images;
   CvHistogram **loaded_hist;
 
   IplImage *incomingImage;
