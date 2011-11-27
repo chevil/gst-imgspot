@@ -184,7 +184,7 @@ gst_imgspot_init (GstImgSpot * filter,
   gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
   filter->imgdir = NULL;
-  filter->algorithm = (char*) malloc( strlen(DEFAULT_ALGORITHM)+1 );;
+  filter->algorithm = (char *) malloc( strlen( DEFAULT_ALGORITHM ) + 1 );
   strcpy( filter->algorithm, DEFAULT_ALGORITHM );
   filter->width = DEFAULT_WIDTH;
   filter->height = DEFAULT_HEIGHT;
@@ -295,6 +295,8 @@ gst_imgspot_set_caps (GstPad * pad, GstCaps * caps)
   gst_structure_get_int (structure, "width", &width);
   gst_structure_get_int (structure, "height", &height);
 
+  filter->incomingImage = cvCreateImageHeader (cvSize (width, height), IPL_DEPTH_8U, 3);
+
   otherpad = (pad == filter->srcpad) ? filter->sinkpad : filter->srcpad;
   gst_object_unref (filter);
 
@@ -307,6 +309,10 @@ gst_imgspot_finalize (GObject * object)
   GstImgSpot *filter;
   filter = GST_IMGSPOT (object);
 
+  if (filter->incomingImage) {
+    cvReleaseImageHeader (&filter->incomingImage);
+  }
+
 }
 
 /* chain function
@@ -318,6 +324,9 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
   GstImgSpot *filter;
   CvPoint best_pos;
   double best_res;
+  IplImage *resized_image;
+  int i, spotted;
+  double mdist;
 
   filter = GST_IMGSPOT (GST_OBJECT_PARENT (pad));
 
@@ -325,6 +334,68 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
     GST_ERROR ("imgdir is null" );
     printf( "gstimgspot : ERROR : imgdir is null\n");
     return GST_FLOW_OK;
+  }
+  
+  filter->incomingImage->imageData = (char *) GST_BUFFER_DATA (buf);
+  resized_image = cvCreateImage(cvSize(filter->width,filter->height), filter->incomingImage->depth, filter->incomingImage->nChannels);
+  // resize the image
+  cvResize( filter->incomingImage, resized_image, CV_INTER_LINEAR );
+
+  // if ( strcmp( filter->algorithm, "histogram" ) == 0 )
+  {
+     // calculate histogram and compare it
+     {
+       // defines quantification
+       CvHistogram *incoming_hist;
+       int w_bins = (int)(filter->width/10);
+       int h_bins = (int)(filter->height/10);
+       double dist;
+
+       int    hist_size[]  = { w_bins, h_bins };
+       float  h_ranges[]   = { 0, 180 };         // hue is [0,180]
+       float  s_ranges[]   = { 0, 255 };
+       float* ranges[]     = { h_ranges, s_ranges };
+
+       incoming_hist = cvCreateHist( 2, hist_size, CV_HIST_ARRAY, ranges, 1);
+
+       IplImage *planes[2]; 
+       IplImage *hsv = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 3);
+       IplImage *h_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+       IplImage *s_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+       IplImage *v_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+       planes[0] = h_plane;
+       planes[1] = s_plane;
+
+       // Convert to hsv
+       cvCvtColor( resized_image, hsv, CV_BGR2HSV );
+       cvCvtPixToPlane( hsv, h_plane, s_plane, v_plane, 0 );
+
+       cvCalcHist( planes, incoming_hist, 0, 0 ); //Compute histogram
+       cvNormalizeHist( incoming_hist, 1.0 );  //Normalize it 
+
+       // check which closer image is displayed
+       spotted = -1;
+       mdist = 0.0;
+       if ( filter->nb_loaded_images > 0 )
+         for (i=0; i<filter->nb_loaded_images; i++) 
+         {
+            dist = cvCompareHist(incoming_hist, filter->loaded_hist[i], CV_COMP_INTERSECT );
+            if ( dist > mdist ) 
+            { 
+               spotted = i;
+               mdist = dist;
+            }
+         }
+
+       if ( spotted != -1 ) printf( "gstimgspot : image %s\n", filter->loaded_images[spotted] );       
+
+       cvReleaseImage( &hsv );
+       cvReleaseImage( &h_plane );
+       cvReleaseImage( &s_plane );
+       cvReleaseImage( &v_plane );
+     }
+
+     cvReleaseImage( &resized_image );
   }
 
   return gst_pad_push (filter->srcpad, buf);
@@ -348,7 +419,7 @@ gst_imgspot_load_images (GstImgSpot * filter)
 
   // scan the directory
   {
-     int nentries, i;
+     int nentries, i, icount;
      struct dirent** dentries;      /* all directory entries                         */
      IplImage* src_image;
      IplImage* resized_image;
@@ -364,6 +435,7 @@ gst_imgspot_load_images (GstImgSpot * filter)
        // free previouly stored data
        if ( filter->loaded_images != NULL )
        {
+         printf( "gstimgspot : freeing previous ressources" );
          for ( i=0; i<filter->nb_loaded_images; i++ )
          {
            free( filter->loaded_images[i] );
@@ -402,6 +474,7 @@ gst_imgspot_load_images (GstImgSpot * filter)
        if ( strcmp( filter->algorithm, "histogram" ) == 0 )
           filter->loaded_hist = (CvHistogram**)malloc(filter->nb_loaded_images*sizeof(CvHistogram*));
 
+       icount=0;
        for ( i=0; i<nentries; i++ )
        {
           // ckeck if we found an image
@@ -413,12 +486,12 @@ gst_imgspot_load_images (GstImgSpot * filter)
                strcasestr( dentries[i]->d_name, ".bmp" )
              )
           {
-             filter->loaded_images[i] = (char *)malloc(strlen(dentries[i]->d_name)+1);
-             strcpy( filter->loaded_images[i], dentries[i]->d_name );
+             filter->loaded_images[icount] = (char *)malloc(strlen(dentries[i]->d_name)+1);
+             strcpy( filter->loaded_images[icount], dentries[i]->d_name );
 
              if ( strcmp( filter->algorithm, "histogram" ) == 0 )
              {
-                sprintf( imgfullname, "%s/%s", filter->imgdir, filter->loaded_images[i] );
+                sprintf( imgfullname, "%s/%s", filter->imgdir, filter->loaded_images[icount] );
                 src_image = cvLoadImage(imgfullname,CV_LOAD_IMAGE_COLOR);
 
                 resized_image = cvCreateImage(cvSize(filter->width,filter->height), src_image->depth, src_image->nChannels);
@@ -429,15 +502,15 @@ gst_imgspot_load_images (GstImgSpot * filter)
                 // calculate histogram
                 {
                    // defines quantification
-                   int h_bins = (int)(filter->width/10);
-                   int s_bins = (int)(filter->height/10);
+                   int w_bins = (int)(filter->width/10);
+                   int h_bins = (int)(filter->height/10);
 
-                   int    hist_size[]  = { h_bins, s_bins };
+                   int    hist_size[]  = { w_bins, h_bins };
                    float  h_ranges[]   = { 0, 180 };         // hue is [0,180]
                    float  s_ranges[]   = { 0, 255 };
                    float* ranges[]     = { h_ranges, s_ranges };
 
-                   filter->loaded_hist[i] = cvCreateHist( 2, hist_size, CV_HIST_ARRAY, ranges, 1);
+                   filter->loaded_hist[icount] = cvCreateHist( 2, hist_size, CV_HIST_ARRAY, ranges, 1);
 
                    IplImage *planes[2]; 
                    IplImage *hsv = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 3);
@@ -451,8 +524,8 @@ gst_imgspot_load_images (GstImgSpot * filter)
                    cvCvtColor( resized_image, hsv, CV_BGR2HSV );
                    cvCvtPixToPlane( hsv, h_plane, s_plane, v_plane, 0 );
 
-                   cvCalcHist( planes, filter->loaded_hist[i], 0, 0 ); //Compute histogram
-                   cvNormalizeHist( filter->loaded_hist[i], 1.0 );  //Normalize it 
+                   cvCalcHist( planes, filter->loaded_hist[icount], 0, 0 ); //Compute histogram
+                   cvNormalizeHist( filter->loaded_hist[icount], 1.0 );  //Normalize it 
 
                    cvReleaseImage( &hsv );
                    cvReleaseImage( &h_plane );
@@ -463,6 +536,7 @@ gst_imgspot_load_images (GstImgSpot * filter)
                 cvReleaseImage( &resized_image );
                 cvReleaseImage( &src_image );
              }
+             icount++;
           }
 
        }

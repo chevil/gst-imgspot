@@ -83,7 +83,7 @@ struct _GstImgSpot
 
   // width and height used to compare images
   // that could be of any size
-  // so the firt thing to do is to resize them
+  // so the first thing to do is to resize them
   gint width;
   gint height;
 
@@ -96,6 +96,8 @@ struct _GstImgSpot
   int nb_loaded_images;
   char **loaded_images;
   CvHistogram **loaded_hist;
+
+  IplImage *incomingImage;
 
 };
 
