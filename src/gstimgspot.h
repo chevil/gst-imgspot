@@ -91,6 +91,12 @@ struct _GstImgSpot
   gchar *imgdir;
 
   gfloat tolerance;
+
+  // pointers to data for loaded images
+  int nb_loaded_images;
+  char **loaded_images;
+  CvHistogram **loaded_hist;
+
 };
 
 struct _GstImgSpotClass

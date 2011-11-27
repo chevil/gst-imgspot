@@ -59,6 +59,9 @@
 #  include <config.h>
 #endif
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include <gst/gst.h>
 
 #include "gstimgspot.h"
@@ -183,10 +186,14 @@ gst_imgspot_init (GstImgSpot * filter,
   filter->imgdir = NULL;
   filter->algorithm = (char*) malloc( strlen(DEFAULT_ALGORITHM)+1 );;
   strcpy( filter->algorithm, DEFAULT_ALGORITHM );
-  gst_imgspot_load_images (filter);
   filter->width = DEFAULT_WIDTH;
   filter->height = DEFAULT_HEIGHT;
   filter->tolerance = DEFAULT_TOLERANCE;
+
+  // data for loaded images
+  filter->nb_loaded_images=0;
+  filter->loaded_images=NULL;
+  filter->loaded_hist=NULL;
 }
 
 static void
@@ -331,6 +338,136 @@ gst_imgspot_match (IplImage * input, double *lower_dist)
 static void
 gst_imgspot_load_images (GstImgSpot * filter)
 {
+
+
+  if (filter->imgdir == NULL) {
+    GST_ERROR ("imgdir is null" );
+    printf( "gstimgspot : ERROR : cannot load images : imgdir is null\n");
+    return;
+  }
+
+  // scan the directory
+  {
+     int nentries, i;
+     struct dirent** dentries;      /* all directory entries                         */
+     IplImage* src_image;
+     IplImage* resized_image;
+     char imgfullname[1024];
+
+       if ( ( nentries = scandir(filter->imgdir, &dentries, NULL, alphasort ) ) == -1 )
+       {
+          printf( "gstimgspot : ERROR : cannot scan directory : %s \n", filter->imgdir );
+          perror( "scandir" );
+          return;
+       }
+
+       // free previouly stored data
+       if ( filter->loaded_images != NULL )
+       {
+         for ( i=0; i<filter->nb_loaded_images; i++ )
+         {
+           free( filter->loaded_images[i] );
+           if ( strcmp( filter->algorithm, "histogram" ) == 0 )
+                cvReleaseHist(&filter->loaded_hist[i]);
+         }
+         free( filter->loaded_images );
+         filter->loaded_images=NULL;
+         if ( strcmp( filter->algorithm, "histogram" ) == 0 )
+         {
+           free( filter->loaded_hist );
+           filter->loaded_hist=NULL;
+         }
+       }
+
+       // calculate the number of images
+       filter->nb_loaded_images=0;
+       for ( i=0; i<nentries; i++ )
+       {
+          // ckeck if we found an image
+          if ( strcasestr( dentries[i]->d_name, ".gif" ) ||
+               strcasestr( dentries[i]->d_name, ".jpg" ) ||
+               strcasestr( dentries[i]->d_name, ".jpeg" ) ||
+               strcasestr( dentries[i]->d_name, ".png" ) ||
+               strcasestr( dentries[i]->d_name, ".tiff" ) ||
+               strcasestr( dentries[i]->d_name, ".bmp" )
+             )
+          {
+             filter->nb_loaded_images++;
+          }
+
+       }
+
+       // allocate necessary structures
+       filter->loaded_images = (char**)malloc(filter->nb_loaded_images*sizeof(char*));
+       if ( strcmp( filter->algorithm, "histogram" ) == 0 )
+          filter->loaded_hist = (CvHistogram**)malloc(filter->nb_loaded_images*sizeof(CvHistogram*));
+
+       for ( i=0; i<nentries; i++ )
+       {
+          // ckeck if we found an image
+          if ( strcasestr( dentries[i]->d_name, ".gif" ) ||
+               strcasestr( dentries[i]->d_name, ".jpg" ) ||
+               strcasestr( dentries[i]->d_name, ".jpeg" ) ||
+               strcasestr( dentries[i]->d_name, ".png" ) ||
+               strcasestr( dentries[i]->d_name, ".tiff" ) ||
+               strcasestr( dentries[i]->d_name, ".bmp" )
+             )
+          {
+             filter->loaded_images[i] = (char *)malloc(strlen(dentries[i]->d_name)+1);
+             strcpy( filter->loaded_images[i], dentries[i]->d_name );
+
+             if ( strcmp( filter->algorithm, "histogram" ) == 0 )
+             {
+                sprintf( imgfullname, "%s/%s", filter->imgdir, filter->loaded_images[i] );
+                src_image = cvLoadImage(imgfullname,CV_LOAD_IMAGE_COLOR);
+
+                resized_image = cvCreateImage(cvSize(filter->width,filter->height), src_image->depth, src_image->nChannels);
+
+                // resize the image
+                cvResize( src_image, resized_image, CV_INTER_LINEAR );
+
+                // calculate histogram
+                {
+                   // defines quantification
+                   int h_bins = (int)(filter->width/10);
+                   int s_bins = (int)(filter->height/10);
+
+                   int    hist_size[]  = { h_bins, s_bins };
+                   float  h_ranges[]   = { 0, 180 };         // hue is [0,180]
+                   float  s_ranges[]   = { 0, 255 };
+                   float* ranges[]     = { h_ranges, s_ranges };
+
+                   filter->loaded_hist[i] = cvCreateHist( 2, hist_size, CV_HIST_ARRAY, ranges, 1);
+
+                   IplImage *planes[2]; 
+                   IplImage *hsv = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 3);
+                   IplImage *h_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+                   IplImage *s_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+                   IplImage *v_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+                   planes[0] = h_plane;
+                   planes[1] = s_plane;
+
+                   // Convert to hsv
+                   cvCvtColor( resized_image, hsv, CV_BGR2HSV );
+                   cvCvtPixToPlane( hsv, h_plane, s_plane, v_plane, 0 );
+
+                   cvCalcHist( planes, filter->loaded_hist[i], 0, 0 ); //Compute histogram
+                   cvNormalizeHist( filter->loaded_hist[i], 1.0 );  //Normalize it 
+
+                   cvReleaseImage( &hsv );
+                   cvReleaseImage( &h_plane );
+                   cvReleaseImage( &s_plane );
+                   cvReleaseImage( &v_plane );
+                }
+
+                cvReleaseImage( &resized_image );
+                cvReleaseImage( &src_image );
+             }
+          }
+
+       }
+  }
+
 }
 
 

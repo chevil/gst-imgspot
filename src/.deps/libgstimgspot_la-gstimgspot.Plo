@@ -1,17 +1,27 @@
 libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
+ /usr/include/unistd.h /usr/include/features.h \
+ /usr/include/bits/predefs.h /usr/include/sys/cdefs.h \
+ /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+ /usr/include/gnu/stubs-32.h /usr/include/bits/posix_opt.h \
+ /usr/include/bits/environments.h /usr/include/bits/types.h \
+ /usr/include/bits/typesizes.h \
+ /usr/lib/gcc/i686-linux-gnu/4.4.5/include/stddef.h \
+ /usr/include/bits/confname.h /usr/include/getopt.h \
+ /usr/include/bits/unistd.h /usr/include/sys/types.h /usr/include/time.h \
+ /usr/include/endian.h /usr/include/bits/endian.h \
+ /usr/include/bits/byteswap.h /usr/include/sys/select.h \
+ /usr/include/bits/select.h /usr/include/bits/sigset.h \
+ /usr/include/bits/time.h /usr/include/sys/sysmacros.h \
+ /usr/include/bits/pthreadtypes.h /usr/include/dirent.h \
+ /usr/include/bits/dirent.h /usr/include/bits/posix1_lim.h \
+ /usr/include/bits/local_lim.h /usr/include/linux/limits.h \
  /usr/include/gstreamer-0.10/gst/gst.h /usr/include/glib-2.0/glib.h \
  /usr/include/glib-2.0/glib/galloca.h /usr/include/glib-2.0/glib/gtypes.h \
  /usr/lib/glib-2.0/include/glibconfig.h \
  /usr/include/glib-2.0/glib/gmacros.h \
- /usr/lib/gcc/i686-linux-gnu/4.4.5/include/stddef.h \
  /usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/limits.h \
  /usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/syslimits.h \
- /usr/include/limits.h /usr/include/features.h \
- /usr/include/bits/predefs.h /usr/include/sys/cdefs.h \
- /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
- /usr/include/gnu/stubs-32.h /usr/include/bits/posix1_lim.h \
- /usr/include/bits/local_lim.h /usr/include/linux/limits.h \
- /usr/include/bits/posix2_lim.h \
+ /usr/include/limits.h /usr/include/bits/posix2_lim.h \
  /usr/lib/gcc/i686-linux-gnu/4.4.5/include/float.h \
  /usr/include/glib-2.0/glib/garray.h \
  /usr/include/glib-2.0/glib/gasyncqueue.h \
@@ -20,18 +30,14 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
  /usr/include/glib-2.0/glib/gquark.h /usr/include/glib-2.0/glib/gutils.h \
  /usr/include/glib-2.0/glib/gatomic.h \
  /usr/include/glib-2.0/glib/gbacktrace.h /usr/include/signal.h \
- /usr/include/bits/sigset.h /usr/include/bits/types.h \
- /usr/include/bits/typesizes.h /usr/include/bits/signum.h \
- /usr/include/time.h /usr/include/bits/siginfo.h \
+ /usr/include/bits/signum.h /usr/include/bits/siginfo.h \
  /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h \
  /usr/include/bits/sigstack.h /usr/include/sys/ucontext.h \
- /usr/include/bits/pthreadtypes.h /usr/include/bits/sigthread.h \
- /usr/include/glib-2.0/glib/gbase64.h \
+ /usr/include/bits/sigthread.h /usr/include/glib-2.0/glib/gbase64.h \
  /usr/include/glib-2.0/glib/gbitlock.h \
- /usr/include/glib-2.0/glib/gbookmarkfile.h /usr/include/bits/time.h \
- /usr/include/xlocale.h /usr/include/glib-2.0/glib/gcache.h \
- /usr/include/glib-2.0/glib/glist.h /usr/include/glib-2.0/glib/gmem.h \
- /usr/include/glib-2.0/glib/gslice.h \
+ /usr/include/glib-2.0/glib/gbookmarkfile.h /usr/include/xlocale.h \
+ /usr/include/glib-2.0/glib/gcache.h /usr/include/glib-2.0/glib/glist.h \
+ /usr/include/glib-2.0/glib/gmem.h /usr/include/glib-2.0/glib/gslice.h \
  /usr/include/glib-2.0/glib/gchecksum.h \
  /usr/include/glib-2.0/glib/gcompletion.h \
  /usr/include/glib-2.0/glib/gconvert.h \
@@ -106,12 +112,9 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
  /usr/include/libxml2/libxml/xmlIO.h \
  /usr/include/libxml2/libxml/globals.h /usr/include/libxml2/libxml/SAX.h \
  /usr/include/stdlib.h /usr/include/bits/waitflags.h \
- /usr/include/bits/waitstatus.h /usr/include/endian.h \
- /usr/include/bits/endian.h /usr/include/bits/byteswap.h \
- /usr/include/sys/types.h /usr/include/sys/select.h \
- /usr/include/bits/select.h /usr/include/sys/sysmacros.h \
- /usr/include/alloca.h /usr/include/bits/stdlib.h \
- /usr/include/libxml2/libxml/xlink.h /usr/include/libxml2/libxml/SAX2.h \
+ /usr/include/bits/waitstatus.h /usr/include/alloca.h \
+ /usr/include/bits/stdlib.h /usr/include/libxml2/libxml/xlink.h \
+ /usr/include/libxml2/libxml/SAX2.h \
  /usr/include/libxml2/libxml/xmlmemory.h \
  /usr/include/libxml2/libxml/threads.h \
  /usr/include/gstreamer-0.10/gst/gstobject.h \
@@ -184,25 +187,7 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
 
 ../config.h:
 
-/usr/include/gstreamer-0.10/gst/gst.h:
-
-/usr/include/glib-2.0/glib.h:
-
-/usr/include/glib-2.0/glib/galloca.h:
-
-/usr/include/glib-2.0/glib/gtypes.h:
-
-/usr/lib/glib-2.0/include/glibconfig.h:
-
-/usr/include/glib-2.0/glib/gmacros.h:
-
-/usr/lib/gcc/i686-linux-gnu/4.4.5/include/stddef.h:
-
-/usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/limits.h:
-
-/usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/syslimits.h:
-
-/usr/include/limits.h:
+/usr/include/unistd.h:
 
 /usr/include/features.h:
 
@@ -216,11 +201,71 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
 
 /usr/include/gnu/stubs-32.h:
 
+/usr/include/bits/posix_opt.h:
+
+/usr/include/bits/environments.h:
+
+/usr/include/bits/types.h:
+
+/usr/include/bits/typesizes.h:
+
+/usr/lib/gcc/i686-linux-gnu/4.4.5/include/stddef.h:
+
+/usr/include/bits/confname.h:
+
+/usr/include/getopt.h:
+
+/usr/include/bits/unistd.h:
+
+/usr/include/sys/types.h:
+
+/usr/include/time.h:
+
+/usr/include/endian.h:
+
+/usr/include/bits/endian.h:
+
+/usr/include/bits/byteswap.h:
+
+/usr/include/sys/select.h:
+
+/usr/include/bits/select.h:
+
+/usr/include/bits/sigset.h:
+
+/usr/include/bits/time.h:
+
+/usr/include/sys/sysmacros.h:
+
+/usr/include/bits/pthreadtypes.h:
+
+/usr/include/dirent.h:
+
+/usr/include/bits/dirent.h:
+
 /usr/include/bits/posix1_lim.h:
 
 /usr/include/bits/local_lim.h:
 
 /usr/include/linux/limits.h:
+
+/usr/include/gstreamer-0.10/gst/gst.h:
+
+/usr/include/glib-2.0/glib.h:
+
+/usr/include/glib-2.0/glib/galloca.h:
+
+/usr/include/glib-2.0/glib/gtypes.h:
+
+/usr/lib/glib-2.0/include/glibconfig.h:
+
+/usr/include/glib-2.0/glib/gmacros.h:
+
+/usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/limits.h:
+
+/usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/syslimits.h:
+
+/usr/include/limits.h:
 
 /usr/include/bits/posix2_lim.h:
 
@@ -246,15 +291,7 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
 
 /usr/include/signal.h:
 
-/usr/include/bits/sigset.h:
-
-/usr/include/bits/types.h:
-
-/usr/include/bits/typesizes.h:
-
 /usr/include/bits/signum.h:
-
-/usr/include/time.h:
 
 /usr/include/bits/siginfo.h:
 
@@ -266,8 +303,6 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
 
 /usr/include/sys/ucontext.h:
 
-/usr/include/bits/pthreadtypes.h:
-
 /usr/include/bits/sigthread.h:
 
 /usr/include/glib-2.0/glib/gbase64.h:
@@ -275,8 +310,6 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
 /usr/include/glib-2.0/glib/gbitlock.h:
 
 /usr/include/glib-2.0/glib/gbookmarkfile.h:
-
-/usr/include/bits/time.h:
 
 /usr/include/xlocale.h:
 
@@ -477,20 +510,6 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
 /usr/include/bits/waitflags.h:
 
 /usr/include/bits/waitstatus.h:
-
-/usr/include/endian.h:
-
-/usr/include/bits/endian.h:
-
-/usr/include/bits/byteswap.h:
-
-/usr/include/sys/types.h:
-
-/usr/include/sys/select.h:
-
-/usr/include/bits/select.h:
-
-/usr/include/sys/sysmacros.h:
 
 /usr/include/alloca.h:
 
