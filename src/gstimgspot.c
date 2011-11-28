@@ -365,41 +365,40 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
      {
        // defines quantification
        CvHistogram *incoming_hist;
-       int r_bins = 25;
-       int g_bins = 25;
-       int b_bins = 25;
+       int s_bins = 25;
+       int v_bins = 25;
        double dist;
 
-       int    hist_size[]  = { r_bins, g_bins, b_bins };
-       float  r_ranges[]   = { 0, 255 };         // hue is [0,180]
-       float  g_ranges[]   = { 0, 255 };
-       float  b_ranges[]   = { 0, 255 };
-       float* ranges[]     = { r_ranges, g_ranges, b_ranges };
+       int    hist_size[]  = { s_bins, v_bins };
+       float  s_ranges[]   = { 0, 255 };         // hue is [0,180]
+       float  v_ranges[]   = { 0, 255 };
+       float* ranges[]     = { s_ranges, v_ranges };
 
-       incoming_hist = cvCreateHist( 3, hist_size, CV_HIST_ARRAY, ranges, 1);
+       incoming_hist = cvCreateHist( 2, hist_size, CV_HIST_ARRAY, ranges, 1);
 
-       IplImage *planes[3]; 
-       IplImage *r_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
-       IplImage *g_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
-       IplImage *b_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
-       planes[0] = r_plane;
-       planes[1] = g_plane;
-       planes[2] = b_plane;
+       IplImage *planes[2]; 
+       IplImage *hsv = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 3);
+       IplImage *h_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+       IplImage *s_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+       IplImage *v_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+       planes[0] = s_plane;
+       planes[1] = v_plane;
 
        // Convert to hsv
-       cvCvtPixToPlane( cesized_image, r_plane, g_plane, b_plane, 0 );
+       cvCvtColor( cesized_image, hsv, CV_BGR2HSV );
+       cvCvtPixToPlane( hsv, h_plane, s_plane, v_plane, 0 );
 
        cvCalcHist( planes, incoming_hist, 0, 0 ); //Compute histogram
        cvNormalizeHist( incoming_hist, 1.0 );  //Normalize it 
 
        // check which closer image is displayed
        spotted = -1;
-       mdist = 0.0;
+       mdist = 1000.0;
        if ( filter->nb_loaded_images > 0 )
          for (i=0; i<filter->nb_loaded_images; i++) 
          {
-            dist = cvCompareHist(incoming_hist, filter->loaded_hist[i], CV_COMP_INTERSECT );
-            if ( dist > mdist ) 
+            dist = cvCompareHist(incoming_hist, filter->loaded_hist[i], CV_COMP_CORREL );
+            if ( dist < mdist ) 
             { 
                spotted = i;
                mdist = dist;
@@ -412,16 +411,17 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
           // the proof
           for (i=0; i<filter->nb_loaded_images; i++) 
           {
-            dist = cvCompareHist(incoming_hist, filter->loaded_hist[i], CV_COMP_INTERSECT );
+            dist = cvCompareHist(incoming_hist, filter->loaded_hist[i], CV_COMP_CORREL );
             printf( "gstimgspot : distance with %d : %f\n", i, dist );       
           }
 
           filter->previous = spotted;
        }
 
-       cvReleaseImage( &r_plane );
-       cvReleaseImage( &g_plane );
-       cvReleaseImage( &b_plane );
+       cvReleaseImage( &hsv);
+       cvReleaseImage( &h_plane );
+       cvReleaseImage( &s_plane );
+       cvReleaseImage( &v_plane );
      }
 
      cvReleaseImage( &cesized_image );
@@ -530,35 +530,35 @@ gst_imgspot_load_images (GstImgSpot * filter)
                 // calculate histogram
                 {
                    // defines quantification
-                   int r_bins = 25;
-                   int g_bins = 25;
-                   int b_bins = 25;
+                   int s_bins = 25;
+                   int v_bins = 25;
 
-                   int    hist_size[]  = { r_bins, g_bins, b_bins };
-                   float  r_ranges[]   = { 0, 255 };         // hue is [0,180]
-                   float  g_ranges[]   = { 0, 255 };
-                   float  b_ranges[]   = { 0, 255 };
-                   float* ranges[]     = { r_ranges, g_ranges, b_ranges };
+                   int    hist_size[]  = { s_bins, v_bins };
+                   float  s_ranges[]   = { 0, 255 };         // hue is [0,180]
+                   float  v_ranges[]   = { 0, 255 };
+                   float* ranges[]     = { s_ranges, v_ranges };
 
-                   filter->loaded_hist[icount] = cvCreateHist( 3, hist_size, CV_HIST_ARRAY, ranges, 1);
+                   filter->loaded_hist[icount] = cvCreateHist( 2, hist_size, CV_HIST_ARRAY, ranges, 1);
 
-                   IplImage *planes[3]; 
-                   IplImage *r_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
-                   IplImage *g_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
-                   IplImage *b_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
-                   planes[0] = r_plane;
-                   planes[1] = g_plane;
-                   planes[2] = b_plane;
+                   IplImage *planes[2]; 
+                   IplImage *hsv = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 3);
+                   IplImage *h_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+                   IplImage *s_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+                   IplImage *v_plane = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+                   planes[0] = s_plane;
+                   planes[1] = v_plane;
 
                    // Convert to hsv
-                   cvCvtPixToPlane( resized_image, r_plane, g_plane, b_plane, 0 );
+                   cvCvtColor( resized_image, hsv, CV_BGR2HSV );
+                   cvCvtPixToPlane( hsv, h_plane, s_plane, v_plane, 0 );
 
                    cvCalcHist( planes, filter->loaded_hist[icount], 0, 0 ); //Compute histogram
                    cvNormalizeHist( filter->loaded_hist[icount], 1.0 );  //Normalize it 
 
-                   cvReleaseImage( &r_plane );
-                   cvReleaseImage( &g_plane );
-                   cvReleaseImage( &b_plane );
+                   cvReleaseImage( &hsv );
+                   cvReleaseImage( &h_plane );
+                   cvReleaseImage( &s_plane );
+                   cvReleaseImage( &v_plane );
                 }
 
                 cvReleaseImage( &resized_image );
