@@ -25,8 +25,8 @@ Then go to the script directory and launch the analysis of a video with :
 
 this script takes two additional optional arguments :
 
-* algorithm [ 'histogram' by default ] : algorithm used for destection
-* tolerance [ 0.10 by default ] : distance tolerance to detect an image
+* algorithm [ 'histogram' or 'surf' ( default ) ] : algorithm used for detection
+* tolerance [ 0.10 by default ] : distance tolerance for similarity
 
 For any more information or support, contact ydegoyon@gmail.com.
 Developped for Kognate, inc.

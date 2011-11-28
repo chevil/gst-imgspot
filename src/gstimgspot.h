@@ -96,7 +96,12 @@ struct _GstImgSpot
   gint nb_loaded_images;
   gint previous;
   gchar **loaded_images;
+
+  // for histograms
   CvHistogram **loaded_hist;
+  // for surf
+  CvSeq **keypoints;
+  CvSeq **descriptors;
 
   IplImage *incomingImage;
   IplImage *previousImage;

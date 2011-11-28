@@ -50,7 +50,7 @@
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot imgdir=data/images algorithm=histogram ! ffmpegcolorspace ! xvimagesink
+ * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=histogram|surf imgdir=../data/images tolerance=0.10 ! ffmpegcolorspace ! xvimagesink
  * ]|
  * </refsect2>
  */
@@ -69,7 +69,7 @@
 GST_DEBUG_CATEGORY_STATIC (gst_imgspot_debug);
 #define GST_CAT_DEFAULT gst_imgspot_debug
 
-#define DEFAULT_ALGORITHM "histogram"
+#define DEFAULT_ALGORITHM "surf"
 #define DEFAULT_WIDTH 320
 #define DEFAULT_HEIGHT 240 
 #define DEFAULT_TOLERANCE 0.10 
@@ -83,6 +83,74 @@ enum
   PROP_HEIGHT,
   PROP_TOLERANCE
 };
+
+static CvMemStorage* storage = NULL;
+static time_t start_t=0;
+static time_t current_t;
+
+// SURF proximity calculations
+double
+compareSURFDescriptors( const float* d1, const float* d2, double best, int length )
+{
+    double total_cost = 0;
+    double t0, t1, t2, t3;
+    int i;
+
+    assert( length % 4 == 0 );
+
+    for( i = 0; i < length; i += 4 )
+    {
+        t0 = d1[i] - d2[i];
+        t1 = d1[i+1] - d2[i+1];
+        t2 = d1[i+2] - d2[i+2];
+        t3 = d1[i+3] - d2[i+3];
+        total_cost += t0*t0 + t1*t1 + t2*t2 + t3*t3;
+        if( total_cost > best )
+            break;
+    }
+    return total_cost;
+}
+
+int
+naiveNearestNeighbor( const float* vec, int laplacian,
+                      const CvSeq* model_keypoints,
+                      const CvSeq* model_descriptors )
+{
+    int length = (int)(model_descriptors->elem_size/sizeof(float));
+    int i, neighbor = -1;
+    double d, dist1 = 1e6, dist2 = 1e6;
+    CvSeqReader reader, kreader;
+
+    if ( ( model_keypoints == NULL ) || ( model_descriptors == NULL ) )
+    {
+       printf( "gstimgspot : FATAL : SURF is NULL!!" );
+       return -1;
+    }
+    cvStartReadSeq( model_keypoints, &kreader, 0 );
+    cvStartReadSeq( model_descriptors, &reader, 0 );
+
+    for( i = 0; i < model_descriptors->total; i++ )
+    {
+        const CvSURFPoint* kp = (const CvSURFPoint*)kreader.ptr;
+        const float* mvec = (const float*)reader.ptr;
+        CV_NEXT_SEQ_ELEM( kreader.seq->elem_size, kreader );
+        CV_NEXT_SEQ_ELEM( reader.seq->elem_size, reader );
+        if( laplacian != kp->laplacian )
+            continue;
+        d = compareSURFDescriptors( vec, mvec, dist2, length );
+        if( d < dist1 )
+        {
+            dist2 = dist1;
+            dist1 = d;
+            neighbor = i;
+        }
+        else if ( d < dist2 )
+            dist2 = d;
+    }
+    if ( dist1 < 0.6*dist2 )
+        return neighbor;
+    return -1;
+}
 
 /* the capabilities of the inputs and outputs.
  */
@@ -147,7 +215,7 @@ gst_imgspot_class_init (GstImgSpotClass * klass)
 
   g_object_class_install_property (gobject_class, PROP_ALGORITHM,
       g_param_spec_string ("algorithm", "Algorithm",
-          "Specifies the algorithm used. 'histogram'=HISTOGRAM.",
+          "Specifies the algorithm used.",
           NULL, G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_IMGDIR,
       g_param_spec_string ("imgdir", "Imgdir", "Directory of images collection.",
@@ -207,10 +275,17 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
 
   switch (prop_id) {
     case PROP_ALGORITHM:
-      if ( strcmp( (char *) g_value_get_string (value), "histogram" ) != 0 )
+      if ( ( strcmp( (char *) g_value_get_string (value), "histogram" ) != 0 ) &&
+           ( strcmp( (char *) g_value_get_string (value), "surf" ) != 0 ) )
       {
          printf( "gstimgspot : wrong algorithm : %s.\n", (char *) g_value_get_string (value));
          break;
+      }
+      printf( "gstimgspot : setting algorithm : %s.\n", (char *) g_value_get_string (value));
+      if ( filter->nb_loaded_images > 0 )
+      {
+         printf( "gstimgspot : reloading images : %s.\n", (char *) g_value_get_string (value));
+         gst_imgspot_load_images (filter);
       }
       filter->algorithm = (char *) malloc( strlen ( (char *) g_value_get_string (value) ) + 1 );
       strcpy( filter->algorithm, (char *) g_value_get_string (value) );
@@ -218,7 +293,7 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
     case PROP_IMGDIR:
       filter->imgdir = (char *) malloc( strlen( (char *) g_value_get_string (value) ) + 1 );
       strcpy( filter->imgdir, (char *) g_value_get_string (value) );
-      printf( "gstimgspot : Loading images from : %s.\n", filter->imgdir);
+      printf( "gstimgspot : Loading images from : %s.\n", filter->imgdir, filter->algorithm);
       gst_imgspot_load_images (filter);
       break;
     case PROP_WIDTH:
@@ -332,8 +407,9 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
   CvPoint best_pos;
   double best_res;
   IplImage *cesized_image;
-  int i, spotted;
+  int i, j, spotted, nbFoundPoints, nbMaxPoints;
   double mdist;
+
 
   filter = GST_IMGSPOT (GST_OBJECT_PARENT (pad));
 
@@ -407,14 +483,14 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
 
        if ( spotted != filter->previous ) 
        {
-          printf( "gstimgspot : image %s\n", filter->loaded_images[spotted] );       
-          // the proof
-          for (i=0; i<filter->nb_loaded_images; i++) 
-          {
-            dist = cvCompareHist(incoming_hist, filter->loaded_hist[i], CV_COMP_CORREL );
-            printf( "gstimgspot : distance with %d : %f\n", i, dist );       
-          }
+          time_t ptime;
+          struct tm *ltime;
 
+          if ( (int)start_t == 0 ) time( &start_t );
+          time( &current_t );
+          ptime = current_t-start_t;
+          ltime = gmtime( &ptime );
+          printf( "gstimgspot : image %s at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
           filter->previous = spotted;
        }
 
@@ -424,8 +500,66 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
        cvReleaseImage( &v_plane );
      }
 
-     cvReleaseImage( &cesized_image );
-  }
+  } // algorithm = histogram
+
+  if ( strcmp( filter->algorithm, "surf" ) == 0 )
+  {
+     IplImage *gray = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+     CvSeq *imageKeypoints = 0, *imageDescriptors = 0;
+     CvSeqReader reader, kreader;
+
+     if ( storage == NULL ) storage = cvCreateMemStorage(0);
+
+     cvCvtColor(cesized_image, gray, CV_BGR2GRAY);
+     cvExtractSURF( gray, 0, &imageKeypoints, &imageDescriptors, storage, cvSURFParams(500, 1), 0 );
+
+     spotted = -1;
+     nbMaxPoints = 0;
+
+     if ( filter->nb_loaded_images > 0 )
+       for (i=0; i<filter->nb_loaded_images; i++) 
+       {
+         nbFoundPoints=0;
+         cvStartReadSeq( imageKeypoints, &kreader, 0 );
+         cvStartReadSeq( imageDescriptors, &reader, 0 );
+
+         for( j = 0; j < imageDescriptors->total; j++ )
+         {
+            const CvSURFPoint* kp = (const CvSURFPoint*)kreader.ptr;
+            const float* descriptor = (const float*)reader.ptr;
+            int nearest_neighbor = naiveNearestNeighbor( descriptor, kp->laplacian, filter->keypoints[i], filter->descriptors[i] );
+            if ( nearest_neighbor > 0 )
+            { 
+               nbFoundPoints++;
+            }
+            CV_NEXT_SEQ_ELEM( kreader.seq->elem_size, kreader );
+            CV_NEXT_SEQ_ELEM( reader.seq->elem_size, reader );
+         }
+         if ( nbFoundPoints > nbMaxPoints )
+         {
+             spotted = i;
+             nbMaxPoints = nbFoundPoints;
+         }
+       }
+
+     if ( spotted != filter->previous ) 
+     {
+        time_t ptime;
+        struct tm *ltime;
+
+        if ( (int)start_t == 0 ) time( &start_t );
+        time( &current_t );
+        ptime = current_t-start_t;
+        ltime = gmtime( &ptime );
+        printf( "gstimgspot : image %s  at %.2d:%.2d:%.2d (score=%d)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, nbFoundPoints );       
+        filter->previous = spotted;
+     }
+
+     cvReleaseImage( &gray );
+                  
+  } // algorithm = surf
+
+  cvReleaseImage( &cesized_image );
 
   return gst_pad_push (filter->srcpad, buf);
 }
@@ -463,7 +597,6 @@ gst_imgspot_load_images (GstImgSpot * filter)
        // free previouly stored data
        if ( filter->loaded_images != NULL )
        {
-         printf( "gstimgspot : freeing previous ressources" );
          for ( i=0; i<filter->nb_loaded_images; i++ )
          {
            free( filter->loaded_images[i] );
@@ -476,6 +609,13 @@ gst_imgspot_load_images (GstImgSpot * filter)
          {
            free( filter->loaded_hist );
            filter->loaded_hist=NULL;
+         }
+         if ( strcmp( filter->algorithm, "surf" ) == 0 )
+         {
+           free( filter->keypoints );
+           free( filter->descriptors );
+           filter->keypoints=NULL;
+           filter->descriptors=NULL;
          }
        }
 
@@ -501,6 +641,11 @@ gst_imgspot_load_images (GstImgSpot * filter)
        filter->loaded_images = (char**)malloc(filter->nb_loaded_images*sizeof(char*));
        if ( strcmp( filter->algorithm, "histogram" ) == 0 )
           filter->loaded_hist = (CvHistogram**)malloc(filter->nb_loaded_images*sizeof(CvHistogram*));
+       if ( strcmp( filter->algorithm, "surf" ) == 0 )
+       {
+          filter->keypoints = (CvSeq**)malloc(filter->nb_loaded_images*sizeof(CvSeq*));
+          filter->descriptors = (CvSeq**)malloc(filter->nb_loaded_images*sizeof(CvSeq*));
+       }
 
        icount=0;
        for ( i=0; i<nentries; i++ )
@@ -517,16 +662,17 @@ gst_imgspot_load_images (GstImgSpot * filter)
              filter->loaded_images[icount] = (char *)malloc(strlen(dentries[i]->d_name)+1);
              strcpy( filter->loaded_images[icount], dentries[i]->d_name );
 
+             // load and resize image
+             sprintf( imgfullname, "%s/%s", filter->imgdir, filter->loaded_images[icount] );
+             src_image = cvLoadImage(imgfullname,CV_LOAD_IMAGE_COLOR);
+
+             resized_image = cvCreateImage(cvSize(filter->width,filter->height), src_image->depth, src_image->nChannels);
+
+             // resize the image
+             cvResize( src_image, resized_image, CV_INTER_LINEAR );
+
              if ( strcmp( filter->algorithm, "histogram" ) == 0 )
              {
-                sprintf( imgfullname, "%s/%s", filter->imgdir, filter->loaded_images[icount] );
-                src_image = cvLoadImage(imgfullname,CV_LOAD_IMAGE_COLOR);
-
-                resized_image = cvCreateImage(cvSize(filter->width,filter->height), src_image->depth, src_image->nChannels);
-
-                // resize the image
-                cvResize( src_image, resized_image, CV_INTER_LINEAR );
-
                 // calculate histogram
                 {
                    // defines quantification
@@ -563,7 +709,23 @@ gst_imgspot_load_images (GstImgSpot * filter)
 
                 cvReleaseImage( &resized_image );
                 cvReleaseImage( &src_image );
-             }
+             } // algorithm = histogram
+
+             if ( strcmp( filter->algorithm, "surf" ) == 0 )
+             {
+                IplImage *gray = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
+
+                if ( storage == NULL ) storage = cvCreateMemStorage(0);
+
+                cvCvtColor(resized_image, gray, CV_BGR2GRAY);
+                filter->keypoints[icount]=0;
+                filter->descriptors[icount]=0;
+                cvExtractSURF( gray, 0, &filter->keypoints[icount], &filter->descriptors[icount], storage, cvSURFParams(500, 1), 0 );
+
+                cvReleaseImage( &gray );
+                  
+             } // algorithm = surf
+
              icount++;
           }
 
