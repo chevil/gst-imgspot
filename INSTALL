@@ -2,15 +2,16 @@ This is a gstreamer plugin for recognition
 of specific images in a video stream.
 
 The video stream can be a video file 
-or a video stream
+or a video camera capture
 and the collection of images 
 can be changed dynamically 
-sending a message to the plugin.
+by entering the new directory at the prompt
+when executing a script.
 
 The plugin uses OpenCV for the recognition of images.
 
-To use it on Ubuntu, first install the dependencies :
-> sudo apt-get install gstreamer-0.10 gstreamer-base-0.10 gstreamer-plugins-base-0.10 opencv libgst-ruby
+To use it on Ubuntu, first install the dependencies (on maverick) :
+> sudo apt-get install gstreamer-0.10 gstreamer-base-0.10 gstreamer-plugins-base-0.10 libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev opencv libcv-dev libcvaux-dev libhighgui-dev libgst-ruby
 
 Then compile the plugins with :
 
@@ -23,10 +24,28 @@ Then go to the script directory and launch the analysis of a video with :
 > cd scripts
 > ruby videofeed.rb ../data/slides.mp4 ../data/images
 
-this script takes two additional optional arguments :
+or the amalysis from a video camera (v4l2) with :
 
-* algorithm [ 'histogram' or 'surf' ( default ) ] : algorithm used for detection
-* tolerance [ 0.10 by default ] : distance tolerance for similarity
+> cd scripts
+> ruby v4l2feed.rb /dev/video0 ../data/images
+
+The scripts take two additional optional arguments,
+that are optional because they have default values :
+
+* algorithm [ 'match' or 'surf' ( default ) ] : algorithm used for detection
+* minscore [ 25 by default ] : minimum score in the comparison with an image to detect a true positive.
+
+The minscore represents different things according to the algorithm used :
+
+* for the 'match' algorithm, it's the correlation factor between two images
+and should be set to a value in [0,1],
+a good default value would be 0.90.
+
+* for the 'surf' algorithm, it represents the number of common SURF points
+between two images and should be set to a value like 25,
+the default used here as 'surf' is the default algorithm
+( the only one that is not sensible to changes in luminosity,
+distance from the screen, orientation, ... ).
 
 For any more information or support, contact ydegoyon@gmail.com.
 Developped for Kognate, inc.

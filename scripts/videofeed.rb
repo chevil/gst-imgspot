@@ -3,7 +3,7 @@
 require 'gst'
 require 'readline'
 
-raise "Usage: #{$0} videofile imagesdir [algorithm=surf] [tolerance=30]" unless(ARGV.length>=2)
+raise "Usage: #{$0} videofile imagesdir [algorithm=surf] [minscore=25]" unless(ARGV.length>=2)
 
 $video=ARGV[0]
 $imgdir=ARGV[1]
@@ -15,24 +15,26 @@ else
 end
 
 if ( ARGV.length == 4 )
-  $tolerance=ARGV[3]
+  $minscore=ARGV[3]
 else
-  $tolerance = 0.1 
+  $minscore = 25 
 end
 
 Gst::init()
 loop=GLib::MainLoop::new(nil,false)
 $pip=nil
 
-def start_pipe(video,imgdir,algorithm,tolerance)
+def start_pipe(video,imgdir,algorithm,minscore)
 
   if ( $pip != nil )
     $pip.stop
   end
 
   cmd=<<-eof
-    filesrc location=#{video}  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 imgdir=#{imgdir} algorithm=#{algorithm} tolerance=#{tolerance} ! ffmpegcolorspace ! sdlvideosink
+    filesrc location=#{video}  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=#{algorithm} imgdir=#{imgdir} minscore=#{minscore} ! ffmpegcolorspace ! autovideosink
   eof
+
+  p cmd
 
   $pip=Gst::Parse::launch(cmd)
 
@@ -57,9 +59,9 @@ def start_pipe(video,imgdir,algorithm,tolerance)
 
 end
 
-start_pipe($video,$imgdir,$algorithm,$tolerance)
+start_pipe($video,$imgdir,$algorithm,$minscore)
 
 
 while $imgdir = Readline.readline('', true)
-  start_pipe($video,$imgdir,$algorithm,$tolerance)
+  start_pipe($video,$imgdir,$algorithm,$minscore)
 end

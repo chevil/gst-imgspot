@@ -90,7 +90,7 @@ struct _GstImgSpot
   gchar *algorithm;
   gchar *imgdir;
 
-  gfloat tolerance;
+  gfloat minscore;
 
   // pointers to data for loaded images
   gint nb_loaded_images;
@@ -102,9 +102,10 @@ struct _GstImgSpot
   // for surf
   CvSeq **keypoints;
   CvSeq **descriptors;
+  // for match
+  IplImage **images;
 
   IplImage *incomingImage;
-  IplImage *previousImage;
 
 };
 

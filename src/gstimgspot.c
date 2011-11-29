@@ -50,7 +50,7 @@
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=histogram|surf imgdir=../data/images tolerance=0.10 ! ffmpegcolorspace ! xvimagesink
+ * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=histogram|surf|match imgdir=../data/images minscore=50|0.90 ! ffmpegcolorspace ! xvimagesink
  * ]|
  * </refsect2>
  */
@@ -72,7 +72,7 @@ GST_DEBUG_CATEGORY_STATIC (gst_imgspot_debug);
 #define DEFAULT_ALGORITHM "surf"
 #define DEFAULT_WIDTH 320
 #define DEFAULT_HEIGHT 240 
-#define DEFAULT_TOLERANCE 0.10 
+#define DEFAULT_MINSCORE 0.90 
 
 enum
 {
@@ -81,12 +81,13 @@ enum
   PROP_IMGDIR,
   PROP_WIDTH,
   PROP_HEIGHT,
-  PROP_TOLERANCE
+  PROP_MINSCORE
 };
 
 static CvMemStorage* storage = NULL;
 static time_t start_t=0;
 static time_t current_t;
+static time_t nbframes=0;;
 
 // SURF proximity calculations
 double
@@ -224,8 +225,8 @@ gst_imgspot_class_init (GstImgSpotClass * klass)
       g_param_spec_int ("width", "Width", "Width of the resized image for comparison.", 32, 1024, 320, G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_HEIGHT,
       g_param_spec_int ("height", "Height", "Height of the resized image for comparison.", 32, 1024, 320, G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, PROP_TOLERANCE,
-      g_param_spec_float ("tolerance", "Tolerance", "Absolute tolerance for the comparison.", 0.1, 100, 0.1, G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, PROP_MINSCORE,
+      g_param_spec_float ("minscore", "Minscore", "Score to reach to be a true positive test.", 0.1, 1000, 0.1, G_PARAM_READWRITE));
 }
 
 /* initialize the new element
@@ -256,7 +257,7 @@ gst_imgspot_init (GstImgSpot * filter,
   strcpy( filter->algorithm, DEFAULT_ALGORITHM );
   filter->width = DEFAULT_WIDTH;
   filter->height = DEFAULT_HEIGHT;
-  filter->tolerance = DEFAULT_TOLERANCE;
+  filter->minscore = DEFAULT_MINSCORE;
 
   // data for loaded images
   filter->nb_loaded_images=0;
@@ -271,12 +272,13 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
 {
   GstImgSpot *filter = GST_IMGSPOT (object);
   int nwidth, nheight;
-  float ntolerance;
+  float nminscore;
 
   switch (prop_id) {
     case PROP_ALGORITHM:
       if ( ( strcmp( (char *) g_value_get_string (value), "histogram" ) != 0 ) &&
-           ( strcmp( (char *) g_value_get_string (value), "surf" ) != 0 ) )
+           ( strcmp( (char *) g_value_get_string (value), "surf" ) != 0 ) && 
+           ( strcmp( (char *) g_value_get_string (value), "match" ) != 0 ) )
       {
          printf( "gstimgspot : wrong algorithm : %s.\n", (char *) g_value_get_string (value));
          break;
@@ -314,14 +316,14 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
       }
       filter->height = nheight;
       break;
-    case PROP_TOLERANCE:
-      ntolerance = g_value_get_float (value);
-      if ( ntolerance < 0.1 )
+    case PROP_MINSCORE:
+      nminscore = g_value_get_float (value);
+      if ( nminscore < 0.5 )
       {
-         printf( "gstimgspot : invalid tolerance : %f.\n", ntolerance);
+         printf( "gstimgspot : invalid minimum score : %f.\n", nminscore);
          break;
       }
-      filter->tolerance = ntolerance;
+      filter->minscore = nminscore;
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -348,8 +350,8 @@ gst_imgspot_get_property (GObject * object, guint prop_id,
     case PROP_HEIGHT:
       g_value_set_int (value, filter->height);
       break;
-    case PROP_TOLERANCE:
-      g_value_set_float (value, filter->tolerance);
+    case PROP_MINSCORE:
+      g_value_set_float (value, filter->minscore);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -374,7 +376,6 @@ gst_imgspot_set_caps (GstPad * pad, GstCaps * caps)
   gst_structure_get_int (structure, "height", &height);
 
   filter->incomingImage = cvCreateImageHeader (cvSize (width, height), IPL_DEPTH_8U, 3);
-  filter->previousImage = cvCreateImage (cvSize (width, height), IPL_DEPTH_8U, 3);
 
   otherpad = (pad == filter->srcpad) ? filter->sinkpad : filter->srcpad;
   gst_object_unref (filter);
@@ -390,9 +391,6 @@ gst_imgspot_finalize (GObject * object)
 
   if (filter->incomingImage) {
     cvReleaseImageHeader (&filter->incomingImage);
-  }
-  if (filter->previousImage) {
-    cvReleaseImage (&filter->previousImage);
   }
 
 }
@@ -410,25 +408,22 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
   int i, j, spotted, nbFoundPoints, nbMaxPoints;
   double mdist;
 
-
   filter = GST_IMGSPOT (GST_OBJECT_PARENT (pad));
 
-  if ((!filter) || (!buf) || filter->imgdir == NULL) {
-    GST_ERROR ("imgdir is null" );
-    printf( "gstimgspot : ERROR : imgdir is null\n");
+  if ((!filter) || (!buf) || filter->imgdir == NULL || filter->width <= 0 || filter->height <= 0 ) {
+    GST_ERROR ("gstimgspot : chain : something is wrong" );
+    printf( "gstimgspot : chain : something is wrong\n");
     return GST_FLOW_OK;
   }
 
-  
+  // strange bug with the camera
+  // the first frames crash
+  // maybe because of the long init
+  nbframes++;
+  if ( nbframes < 10 ) return GST_FLOW_OK;
+
+  if ( (int)start_t == 0 ) time( &start_t );
   filter->incomingImage->imageData = (char *) GST_BUFFER_DATA (buf);
-
-  if ( memcmp( (char *) GST_BUFFER_DATA (buf), filter->previousImage->imageData, 3*filter->previousImage->width*filter->previousImage->height ) == 0 )
-  {
-     return gst_pad_push (filter->srcpad, buf);
-  }
-
-  // memorize the frame
-  memcpy( filter->previousImage->imageData, (char *) GST_BUFFER_DATA (buf), 3*filter->previousImage->width*filter->previousImage->height );
 
   // process the new frame
   cesized_image = cvCreateImage(cvSize(filter->width,filter->height), filter->incomingImage->depth, filter->incomingImage->nChannels);
@@ -469,24 +464,23 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
 
        // check which closer image is displayed
        spotted = -1;
-       mdist = 1000.0;
+       mdist = 0.0;
        if ( filter->nb_loaded_images > 0 )
          for (i=0; i<filter->nb_loaded_images; i++) 
          {
             dist = cvCompareHist(incoming_hist, filter->loaded_hist[i], CV_COMP_CORREL );
-            if ( dist < mdist ) 
+            if ( dist > mdist ) 
             { 
                spotted = i;
                mdist = dist;
             }
          }
 
-       if ( spotted != filter->previous ) 
+       if ( spotted != -1 && spotted != filter->previous ) 
        {
           time_t ptime;
           struct tm *ltime;
 
-          if ( (int)start_t == 0 ) time( &start_t );
           time( &current_t );
           ptime = current_t-start_t;
           ltime = gmtime( &ptime );
@@ -511,7 +505,8 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
      if ( storage == NULL ) storage = cvCreateMemStorage(0);
 
      cvCvtColor(cesized_image, gray, CV_BGR2GRAY);
-     cvExtractSURF( gray, 0, &imageKeypoints, &imageDescriptors, storage, cvSURFParams(500, 1), 0 );
+     if ( ( gray->width > 0 ) &&  ( gray->height > 0 ) )
+        cvExtractSURF( gray, 0, &imageKeypoints, &imageDescriptors, storage, cvSURFParams(500, 1), 0 );
 
      spotted = -1;
      nbMaxPoints = 0;
@@ -535,29 +530,78 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
             CV_NEXT_SEQ_ELEM( kreader.seq->elem_size, kreader );
             CV_NEXT_SEQ_ELEM( reader.seq->elem_size, reader );
          }
-         if ( nbFoundPoints > nbMaxPoints )
+         if ( ( nbFoundPoints > nbMaxPoints ) && ( nbFoundPoints > filter->minscore ) )
          {
              spotted = i;
              nbMaxPoints = nbFoundPoints;
          }
        }
 
-     if ( spotted != filter->previous ) 
+     if ( spotted != -1 && spotted != filter->previous ) 
      {
         time_t ptime;
         struct tm *ltime;
+        char cmd[1024];
 
-        if ( (int)start_t == 0 ) time( &start_t );
         time( &current_t );
         ptime = current_t-start_t;
         ltime = gmtime( &ptime );
-        printf( "gstimgspot : image %s  at %.2d:%.2d:%.2d (score=%d)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, nbFoundPoints );       
+        printf( "gstimgspot : image %s  at %.2d:%.2d:%.2d (score=%d)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, nbMaxPoints );       
         filter->previous = spotted;
      }
 
      cvReleaseImage( &gray );
                   
   } // algorithm = surf
+
+  // doing a template match on all images
+  // it might be slow
+  if ( strcmp( filter->algorithm, "match" ) == 0 )
+  {
+     IplImage *dist_image = cvCreateImage (cvSize (1, 1), IPL_DEPTH_32F, 1);
+     double dist_min = 0, dist_max = 0, dist;
+     CvPoint min_pos, max_pos;
+     int method = CV_TM_SQDIFF_NORMED;
+
+     spotted = -1;
+     mdist = 0.0;
+
+     if ( filter->nb_loaded_images > 0 )
+       for (i=0; i<filter->nb_loaded_images; i++) 
+       {
+          cvMatchTemplate (filter->images[i], cesized_image, dist_image, method);
+          cvMinMaxLoc (dist_image, &dist_min, &dist_max, &min_pos, &max_pos, NULL);      
+          if ((CV_TM_SQDIFF_NORMED == method) || (CV_TM_SQDIFF == method)) {
+            dist = dist_min;
+            if (CV_TM_SQDIFF_NORMED == method) {
+              dist = 1 - dist;
+            }
+          } else {
+            dist = dist_max;
+          }
+
+          if (  dist > mdist && dist > filter->minscore )
+          {
+             spotted = i;
+             mdist = dist;
+          }
+       }
+
+     if ( spotted != -1 && spotted != filter->previous ) 
+     {
+        time_t ptime;
+        struct tm *ltime;
+        char cmd[1024];
+
+        time( &current_t );
+        ptime = current_t-start_t;
+        ltime = gmtime( &ptime );
+        printf( "gstimgspot : image %s  at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
+        filter->previous = spotted;
+     }
+
+     cvReleaseImage( &dist_image );
+  }
 
   cvReleaseImage( &cesized_image );
 
@@ -602,6 +646,8 @@ gst_imgspot_load_images (GstImgSpot * filter)
            free( filter->loaded_images[i] );
            if ( strcmp( filter->algorithm, "histogram" ) == 0 )
                 cvReleaseHist(&filter->loaded_hist[i]);
+           if ( strcmp( filter->algorithm, "match" ) == 0 )
+                cvReleaseImage(&filter->images[i]);
          }
          free( filter->loaded_images );
          filter->loaded_images=NULL;
@@ -616,6 +662,11 @@ gst_imgspot_load_images (GstImgSpot * filter)
            free( filter->descriptors );
            filter->keypoints=NULL;
            filter->descriptors=NULL;
+         }
+         if ( strcmp( filter->algorithm, "match" ) == 0 )
+         {
+           free( filter->images );
+           filter->images=NULL;
          }
        }
 
@@ -645,6 +696,10 @@ gst_imgspot_load_images (GstImgSpot * filter)
        {
           filter->keypoints = (CvSeq**)malloc(filter->nb_loaded_images*sizeof(CvSeq*));
           filter->descriptors = (CvSeq**)malloc(filter->nb_loaded_images*sizeof(CvSeq*));
+       }
+       if ( strcmp( filter->algorithm, "match" ) == 0 )
+       {
+          filter->images = (IplImage**)malloc(filter->nb_loaded_images*sizeof(IplImage*));
        }
 
        icount=0;
@@ -725,6 +780,12 @@ gst_imgspot_load_images (GstImgSpot * filter)
                 cvReleaseImage( &gray );
                   
              } // algorithm = surf
+
+             if ( strcmp( filter->algorithm, "match" ) == 0 )
+             {
+               // not doing much, only stored the resized image
+               filter->images[icount] = cvCloneImage( resized_image );
+             }
 
              icount++;
           }
