@@ -24,7 +24,7 @@ Then go to the script directory and launch the analysis of a video with :
 > cd scripts
 > ruby videofeed.rb ../data/slides.mp4 ../data/images
 
-or the amalysis from a video camera (v4l2) with :
+or the analysis from a video camera (v4l2) with :
 
 > cd scripts
 > ruby v4l2feed.rb /dev/video0 ../data/images
