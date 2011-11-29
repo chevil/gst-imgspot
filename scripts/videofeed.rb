@@ -3,7 +3,7 @@
 require 'gst'
 require 'readline'
 
-raise "Usage: #{$0} videofile imagesdir [algorithm=surf] [minscore=25]" unless(ARGV.length>=2)
+raise "Usage: #{$0} videofile imagesdir [algorithm=surf] [minscore=30]" unless(ARGV.length>=2)
 
 $video=ARGV[0]
 $imgdir=ARGV[1]
@@ -17,7 +17,7 @@ end
 if ( ARGV.length == 4 )
   $minscore=ARGV[3]
 else
-  $minscore = 25 
+  $minscore = 30 
 end
 
 Gst::init()

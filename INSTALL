@@ -33,7 +33,7 @@ The scripts take two additional optional arguments,
 that are optional because they have default values :
 
 * algorithm [ 'match' or 'surf' ( default ) ] : algorithm used for detection
-* minscore [ 25 by default ] : minimum score in the comparison with an image to detect a true positive.
+* minscore [ 30 by default ] : minimum score in the comparison with an image to detect a true positive.
 
 The minscore represents different things according to the algorithm used :
 
@@ -42,7 +42,7 @@ and should be set to a value in [0,1],
 a good default value would be 0.90.
 
 * for the 'surf' algorithm, it represents the number of common SURF points
-between two images and should be set to a value like 25,
+between two images and should be set to a value like 30,
 the default used here as 'surf' is the default algorithm
 ( the only one that is not sensible to changes in luminosity,
 distance from the screen, orientation, ... ).
