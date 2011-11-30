@@ -416,12 +416,6 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
     return GST_FLOW_OK;
   }
 
-  // strange bug with the camera
-  // the first frames crash
-  // maybe because of the long init
-  nbframes++;
-  if ( nbframes < 10 ) return GST_FLOW_OK;
-
   if ( (int)start_t == 0 ) time( &start_t );
   filter->incomingImage->imageData = (char *) GST_BUFFER_DATA (buf);
 

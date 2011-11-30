@@ -17,7 +17,7 @@ old_library='libgstimgspot.a'
 inherited_linker_flags=' -pthread'
 
 # Libraries that this one depends upon.
-dependency_libs=' /usr/lib/libgstbase-0.10.la /usr/lib/libgstreamer-0.10.la /usr/lib/libgobject-2.0.la /usr/lib/libgmodule-2.0.la /usr/lib/libxml2.la /usr/lib/libgthread-2.0.la -lrt /usr/lib/libglib-2.0.la -lml -lcvaux -lhighgui -lcv -lcxcore'
+dependency_libs=' /usr/lib/libgstbase-0.10.la /usr/lib/libgstreamer-0.10.la /usr/lib/libxml2.la -L/usr/local/lib /usr/local/lib/libhighgui.la /usr/lib/libgtk-x11-2.0.la /usr/lib/libgdk-x11-2.0.la /usr/lib/libatk-1.0.la /usr/lib/libgio-2.0.la /usr/lib/libpangoft2-1.0.la /usr/lib/libpangocairo-1.0.la /usr/lib/libcairo.la /usr/lib/libpango-1.0.la /usr/lib/libfreetype.la -lfontconfig -lgdk_pixbuf-2.0 /usr/lib/libgobject-2.0.la /usr/lib/libgmodule-2.0.la /usr/lib/libgthread-2.0.la /usr/lib/libglib-2.0.la -lpng12 /usr/lib/libtiff.la /usr/lib/libjasper.la /usr/lib/libjpeg.la /usr/lib/libraw1394.la -ldc1394 /usr/local/lib/libcvaux.la /usr/local/lib/libcv.la /usr/local/lib/libml.la /usr/local/lib/libcxcore.la -lavformat -lavcodec -lrt -lz -lpthread -ldl'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
