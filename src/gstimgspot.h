@@ -49,7 +49,7 @@
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot imgdir=data/images algorithm=histogram ! ffmpegcolorspace ! xvimagesink
+ * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=histogram|surf|match imgdir=../data/images minscore=50|0.90 output=bus ! ffmpegcolorspace ! xvimagesink
  * ]|
  * </refsect2>
  */
@@ -88,6 +88,7 @@ struct _GstImgSpot
   gint height;
 
   gchar *algorithm;
+  gchar *output;
   gchar *imgdir;
 
   gfloat minscore;

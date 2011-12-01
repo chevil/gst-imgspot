@@ -332,6 +332,7 @@ def main(args):
     spotter = gst.element_factory_make("imgspot")
     spotter.set_property("width", 320 );
     spotter.set_property("height", 240 );
+    spotter.set_property("output", "bus" );
     spotter.set_property("algorithm", algorithm );
     spotter.set_property("imgdir", imgdir );
     spotter.set_property("minscore", int(minscore) );

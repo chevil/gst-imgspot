@@ -50,7 +50,7 @@
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=histogram|surf|match imgdir=../data/images minscore=50|0.90 ! ffmpegcolorspace ! xvimagesink
+ * gst-launch filesrc location=data/slides.mp4  ! decodebin ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=histogram|surf|match imgdir=../data/images minscore=50|0.90 output=bus ! ffmpegcolorspace ! xvimagesink
  * ]|
  * </refsect2>
  */
@@ -73,6 +73,7 @@ GST_DEBUG_CATEGORY_STATIC (gst_imgspot_debug);
 #define DEFAULT_WIDTH 320
 #define DEFAULT_HEIGHT 240 
 #define DEFAULT_MINSCORE 0.90 
+#define DEFAULT_OUTPUT "console" 
 
 enum
 {
@@ -81,7 +82,8 @@ enum
   PROP_IMGDIR,
   PROP_WIDTH,
   PROP_HEIGHT,
-  PROP_MINSCORE
+  PROP_MINSCORE,
+  PROP_OUTPUT
 };
 
 static CvMemStorage* storage = NULL;
@@ -227,6 +229,8 @@ gst_imgspot_class_init (GstImgSpotClass * klass)
       g_param_spec_int ("height", "Height", "Height of the resized image for comparison.", 32, 1024, 320, G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_MINSCORE,
       g_param_spec_float ("minscore", "Minscore", "Score to reach to be a true positive test.", 0.1, 1000, 0.1, G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, PROP_OUTPUT,
+      g_param_spec_string ("output", "Output", "Output mode : console or bus.", NULL, G_PARAM_READWRITE));
 }
 
 /* initialize the new element
@@ -255,6 +259,8 @@ gst_imgspot_init (GstImgSpot * filter,
   filter->imgdir = NULL;
   filter->algorithm = (char *) malloc( strlen( DEFAULT_ALGORITHM ) + 1 );
   strcpy( filter->algorithm, DEFAULT_ALGORITHM );
+  filter->output = (char *) malloc( strlen( DEFAULT_OUTPUT ) + 1 );
+  strcpy( filter->output, DEFAULT_OUTPUT );
   filter->width = DEFAULT_WIDTH;
   filter->height = DEFAULT_HEIGHT;
   filter->minscore = DEFAULT_MINSCORE;
@@ -325,6 +331,16 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
       }
       filter->minscore = nminscore;
       break;
+    case PROP_OUTPUT:
+      if ( ( strcmp( (char *) g_value_get_string (value), "console" ) != 0 ) &&
+           ( strcmp( (char *) g_value_get_string (value), "bus" ) != 0 ) )
+      {
+         printf( "gstimgspot : wrong output mode : %s.\n", (char *) g_value_get_string (value));
+         break;
+      }
+      filter->output = (char *) malloc( strlen ( (char *) g_value_get_string (value) ) + 1 );
+      strcpy( filter->output, (char *) g_value_get_string (value) );
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -352,6 +368,9 @@ gst_imgspot_get_property (GObject * object, guint prop_id,
       break;
     case PROP_MINSCORE:
       g_value_set_float (value, filter->minscore);
+      break;
+    case PROP_OUTPUT:
+      g_value_set_string (value, filter->output);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -477,22 +496,29 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
 
        if ( spotted != -1 && spotted != filter->previous ) 
        {
-          // time_t ptime;
-          // struct tm *ltime;
+          if ( strcmp( filter->output, "console") == 0 )
+          {
+             time_t ptime;
+             struct tm *ltime;
 
-          // time( &current_t );
-          // ptime = current_t-start_t;
-          // ltime = gmtime( &ptime );
-          // printf( "gstimgspot : histogram : image %s at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
-          GstStructure *s = gst_structure_new ("imgspot",
-          "algorithm", G_TYPE_STRING, "histogram",
-          "spotted", G_TYPE_UINT, spotted,
-          "name", G_TYPE_STRING, filter->loaded_images[spotted],
-          "score", G_TYPE_UINT, mdist,
-          NULL);
+             time( &current_t );
+             ptime = current_t-start_t;
+             ltime = gmtime( &ptime );
+             printf( "gstimgspot : histogram : image %s at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
+          }
 
-          GstMessage *m = gst_message_new_element (GST_OBJECT (filter), s);
-          gst_element_post_message (GST_ELEMENT (filter), m);
+          if ( strcmp( filter->output, "bus") == 0 )
+          {
+             GstStructure *s = gst_structure_new ("imgspot",
+             "algorithm", G_TYPE_STRING, "histogram",
+             "spotted", G_TYPE_UINT, spotted,
+             "name", G_TYPE_STRING, filter->loaded_images[spotted],
+             "score", G_TYPE_UINT, mdist,
+             NULL);
+
+             GstMessage *m = gst_message_new_element (GST_OBJECT (filter), s);
+             gst_element_post_message (GST_ELEMENT (filter), m);
+          }
 
           filter->previous = spotted;
        }
@@ -546,23 +572,29 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
 
      if ( spotted != -1 && spotted != filter->previous ) 
      {
-        // time_t ptime;
-        // struct tm *ltime;
+        if ( strcmp( filter->output, "console") == 0 )
+        {
+           time_t ptime;
+           struct tm *ltime;
 
-        // time( &current_t );
-        // ptime = current_t-start_t;
-        // ltime = gmtime( &ptime );
-        // printf( "gstimgspot : surf : image %s  at %.2d:%.2d:%.2d (score=%d)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, nbMaxPoints );
+           time( &current_t );
+           ptime = current_t-start_t;
+           ltime = gmtime( &ptime );
+           printf( "gstimgspot : surf : image %s  at %.2d:%.2d:%.2d (score=%d)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, nbMaxPoints );
+        }
 
-        GstStructure *s = gst_structure_new ("imgspot",
-        "algorithm", G_TYPE_STRING, "surf",
-        "spotted", G_TYPE_UINT, spotted,
-        "name", G_TYPE_STRING, filter->loaded_images[spotted],
-        "score", G_TYPE_UINT, nbMaxPoints,
-        NULL);
-
-        GstMessage *m = gst_message_new_element (GST_OBJECT (filter), s);
-        gst_element_post_message (GST_ELEMENT (filter), m);
+        if ( strcmp( filter->output, "bus") == 0 )
+        {
+           GstStructure *s = gst_structure_new ("imgspot",
+           "algorithm", G_TYPE_STRING, "surf",
+           "spotted", G_TYPE_UINT, spotted,
+           "name", G_TYPE_STRING, filter->loaded_images[spotted],
+           "score", G_TYPE_UINT, nbMaxPoints,
+           NULL);
+ 
+           GstMessage *m = gst_message_new_element (GST_OBJECT (filter), s);
+           gst_element_post_message (GST_ELEMENT (filter), m);
+        }
 
         filter->previous = spotted;
      }
@@ -604,24 +636,30 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
 
      if ( spotted != -1 && spotted != filter->previous ) 
      {
-        // time_t ptime;
-        // struct tm *ltime;
-        // char cmd[1024];
+        if ( strcmp( filter->output, "console") == 0 )
+        {
+           time_t ptime;
+           struct tm *ltime;
+           char cmd[1024];
 
-        // time( &current_t );
-        // ptime = current_t-start_t;
-        // ltime = gmtime( &ptime );
-        // printf( "gstimgspot : match : image %s  at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
+           time( &current_t );
+           ptime = current_t-start_t;
+           ltime = gmtime( &ptime );
+           printf( "gstimgspot : match : image %s  at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
+        }
 
-        GstStructure *s = gst_structure_new ("imgspot",
-        "algorithm", G_TYPE_STRING, "match",
-        "spotted", G_TYPE_UINT, spotted,
-        "name", G_TYPE_STRING, filter->loaded_images[spotted],
-        "score", G_TYPE_UINT, mdist,
-        NULL);
+        if ( strcmp( filter->output, "bus") == 0 )
+        {
+           GstStructure *s = gst_structure_new ("imgspot",
+           "algorithm", G_TYPE_STRING, "match",
+           "spotted", G_TYPE_UINT, spotted,
+           "name", G_TYPE_STRING, filter->loaded_images[spotted],
+           "score", G_TYPE_UINT, mdist,
+           NULL);
 
-        GstMessage *m = gst_message_new_element (GST_OBJECT (filter), s);
-        gst_element_post_message (GST_ELEMENT (filter), m);
+           GstMessage *m = gst_message_new_element (GST_OBJECT (filter), s);
+           gst_element_post_message (GST_ELEMENT (filter), m);
+        }
 
         filter->previous = spotted;
      }
