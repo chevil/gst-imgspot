@@ -448,6 +448,10 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
     return GST_FLOW_OK;
   }
 
+  // strange problem with camera
+  nbframes++;
+  if ( nbframes < 5 ) return GST_FLOW_OK;
+
   pthread_mutex_lock(&filter->mutex);
 
   if ( (int)start_t == 0 ) time( &start_t );
