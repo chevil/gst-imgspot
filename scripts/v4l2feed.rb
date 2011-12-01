@@ -31,7 +31,7 @@ def start_pipe(videodev,imgdir,algorithm,minscore)
   end
 
   cmd=<<-eof
-    v4l2src device=#{videodev}  ! video/x-raw-yuv ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=#{algorithm} imgdir=#{imgdir} minscore=#{minscore} output=console ! ffmpegcolorspace ! autovideosink
+    v4l2src device=#{videodev}  ! video/x-raw-yuv ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm=#{algorithm} imgdir=#{imgdir} minscore=#{minscore} output=console ! ffmpegcolorspace ! timeoverlay ! autovideosink
   eof
 
   p cmd
