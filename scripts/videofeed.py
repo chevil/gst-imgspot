@@ -52,7 +52,7 @@ class GstPlayer:
         elif t == gst.MESSAGE_ELEMENT:
              st = message.structure
              if st.get_name() == "imgspot":
-                print "imgspot : %s : image spotted : %s at %s (score=%d)" % (st["algorithm"], st["name"], "", st["score"])
+                print "imgspot : %s : image spotted : %s at %s (score=%d)" % (st["algorithm"], st["name"], hscale.get_value(), st["score"])
         elif t == gst.MESSAGE_EOS:
             if self.on_eos:
                 self.on_eos()
