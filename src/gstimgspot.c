@@ -376,6 +376,7 @@ gst_imgspot_set_caps (GstPad * pad, GstCaps * caps)
   gst_structure_get_int (structure, "height", &height);
 
   filter->incomingImage = cvCreateImageHeader (cvSize (width, height), IPL_DEPTH_8U, 3);
+  filter->gray = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
 
   otherpad = (pad == filter->srcpad) ? filter->sinkpad : filter->srcpad;
   gst_object_unref (filter);
@@ -391,6 +392,9 @@ gst_imgspot_finalize (GObject * object)
 
   if (filter->incomingImage) {
     cvReleaseImageHeader (&filter->incomingImage);
+  }
+  if (filter->gray) {
+    cvReleaseImageHeader (&filter->gray);
   }
 
 }
@@ -423,6 +427,7 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
   cesized_image = cvCreateImage(cvSize(filter->width,filter->height), filter->incomingImage->depth, filter->incomingImage->nChannels);
   // resize the image
   cvResize( filter->incomingImage, cesized_image, CV_INTER_LINEAR );
+  if ( ( cesized_image->width <= 0 ) || ( cesized_image->width <= 0 ) ) return GST_FLOW_OK;
 
   if ( strcmp( filter->algorithm, "histogram" ) == 0 )
   {
@@ -478,7 +483,7 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
           time( &current_t );
           ptime = current_t-start_t;
           ltime = gmtime( &ptime );
-          printf( "gstimgspot : image %s at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
+          printf( "gstimgspot : histogram : image %s at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
           filter->previous = spotted;
        }
 
@@ -492,15 +497,13 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
 
   if ( strcmp( filter->algorithm, "surf" ) == 0 )
   {
-     IplImage *gray = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
      CvSeq *imageKeypoints = 0, *imageDescriptors = 0;
      CvSeqReader reader, kreader;
 
-     if ( storage == NULL ) storage = cvCreateMemStorage(0);
+     if ( storage == NULL ) storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
 
-     cvCvtColor(cesized_image, gray, CV_BGR2GRAY);
-     if ( ( gray->width > 0 ) &&  ( gray->height > 0 ) )
-        cvExtractSURF( gray, 0, &imageKeypoints, &imageDescriptors, storage, cvSURFParams(500, 1), 0 );
+     cvCvtColor(cesized_image, filter->gray, CV_BGR2GRAY);
+     cvExtractSURF( filter->gray, 0, &imageKeypoints, &imageDescriptors, storage, cvSURFParams(500, 1), 0 );
 
      spotted = -1;
      nbMaxPoints = 0;
@@ -540,11 +543,9 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
         time( &current_t );
         ptime = current_t-start_t;
         ltime = gmtime( &ptime );
-        printf( "gstimgspot : image %s  at %.2d:%.2d:%.2d (score=%d)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, nbMaxPoints );       
+        printf( "gstimgspot : surf : image %s  at %.2d:%.2d:%.2d (score=%d)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, nbMaxPoints );       
         filter->previous = spotted;
      }
-
-     cvReleaseImage( &gray );
                   
   } // algorithm = surf
 
@@ -590,12 +591,12 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
         time( &current_t );
         ptime = current_t-start_t;
         ltime = gmtime( &ptime );
-        printf( "gstimgspot : image %s  at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
+        printf( "gstimgspot : match : image %s  at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
         filter->previous = spotted;
      }
 
      cvReleaseImage( &dist_image );
-  }
+  } // algorithm = match
 
   cvReleaseImage( &cesized_image );
 
@@ -764,7 +765,7 @@ gst_imgspot_load_images (GstImgSpot * filter)
              {
                 IplImage *gray = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
 
-                if ( storage == NULL ) storage = cvCreateMemStorage(0);
+                if ( storage == NULL ) storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
 
                 cvCvtColor(resized_image, gray, CV_BGR2GRAY);
                 filter->keypoints[icount]=0;

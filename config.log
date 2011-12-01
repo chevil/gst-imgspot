@@ -486,21 +486,21 @@ configure:14722: result: GNU/Linux ld.so
 configure:14773: checking how to hardcode library paths into programs
 configure:14798: result: immediate
 configure:14846: checking highgui.h usability
-configure:14846: g++ -c -g -O2 -I/usr/local/include/opencv   conftest.cpp >&5
+configure:14846: g++ -c -g -O2 -I/usr/include/opencv   conftest.cpp >&5
 configure:14846: $? = 0
 configure:14846: result: yes
 configure:14846: checking highgui.h presence
-configure:14846: g++ -E -I/usr/local/include/opencv   conftest.cpp
+configure:14846: g++ -E -I/usr/include/opencv   conftest.cpp
 configure:14846: $? = 0
 configure:14846: result: yes
 configure:14846: checking for highgui.h
 configure:14846: result: yes
 configure:14858: checking cvaux.h usability
-configure:14858: g++ -c -g -O2 -I/usr/local/include/opencv   conftest.cpp >&5
+configure:14858: g++ -c -g -O2 -I/usr/include/opencv   conftest.cpp >&5
 configure:14858: $? = 0
 configure:14858: result: yes
 configure:14858: checking cvaux.h presence
-configure:14858: g++ -E -I/usr/local/include/opencv   conftest.cpp
+configure:14858: g++ -E -I/usr/include/opencv   conftest.cpp
 configure:14858: $? = 0
 configure:14858: result: yes
 configure:14858: checking for cvaux.h
@@ -651,8 +651,8 @@ pkg_cv_GST_BASE_CFLAGS='-pthread -I/usr/include/gstreamer-0.10 -I/usr/include/gl
 pkg_cv_GST_BASE_LIBS='-pthread -lgstbase-0.10 -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0  '
 pkg_cv_GST_CFLAGS='-pthread -I/usr/include/gstreamer-0.10 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/libxml2  '
 pkg_cv_GST_LIBS='-pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0  '
-pkg_cv_OPENCV_CFLAGS='-I/usr/local/include/opencv  '
-pkg_cv_OPENCV_LIBS='-L/usr/local/lib -lcv -lhighgui -lcvaux -lml -lcxcore  '
+pkg_cv_OPENCV_CFLAGS='-I/usr/include/opencv  '
+pkg_cv_OPENCV_LIBS='-lml -lcvaux -lhighgui -lcv -lcxcore  '
 
 ## ----------------- ##
 ## Output variables. ##
@@ -719,8 +719,8 @@ NM='/usr/bin/nm -B'
 NMEDIT=''
 OBJDUMP='objdump'
 OBJEXT='o'
-OPENCV_CFLAGS='-I/usr/local/include/opencv  '
-OPENCV_LIBS='-L/usr/local/lib -lcv -lhighgui -lcvaux -lml -lcxcore  '
+OPENCV_CFLAGS='-I/usr/include/opencv  '
+OPENCV_LIBS='-lml -lcvaux -lhighgui -lcv -lcxcore  '
 OTOOL64=''
 OTOOL=''
 PACKAGE=''

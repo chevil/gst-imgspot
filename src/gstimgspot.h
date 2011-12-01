@@ -106,6 +106,7 @@ struct _GstImgSpot
   IplImage **images;
 
   IplImage *incomingImage;
+  IplImage *gray;
 
 };
 

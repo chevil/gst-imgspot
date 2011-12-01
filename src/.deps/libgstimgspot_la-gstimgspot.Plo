@@ -169,8 +169,8 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
  /usr/include/gstreamer-0.10/gst/gstparse.h \
  /usr/include/gstreamer-0.10/gst/gstxml.h \
  /usr/include/gstreamer-0.10/gst/gstcompat.h gstimgspot.h \
- /usr/local/include/opencv/cv.h /usr/local/include/opencv/cxcore.h \
- /usr/local/include/opencv/cxtypes.h /usr/include/assert.h \
+ /usr/include/opencv/cv.h /usr/include/opencv/cxcore.h \
+ /usr/include/opencv/cxtypes.h /usr/include/assert.h \
  /usr/include/string.h /usr/include/bits/string.h \
  /usr/include/bits/string2.h /usr/include/bits/string3.h \
  /usr/include/stdint.h /usr/include/bits/wchar.h /usr/include/math.h \
@@ -178,14 +178,12 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
  /usr/include/bits/huge_vall.h /usr/include/bits/inf.h \
  /usr/include/bits/nan.h /usr/include/bits/mathdef.h \
  /usr/include/bits/mathcalls.h /usr/include/bits/mathinline.h \
- /usr/local/include/opencv/cxerror.h /usr/local/include/opencv/cvver.h \
- /usr/local/include/opencv/cxcore.hpp /usr/local/include/opencv/cxmisc.h \
- /usr/local/include/opencv/cvconfig.h \
- /usr/local/include/opencv/cxoperations.hpp \
- /usr/local/include/opencv/cxmat.hpp /usr/local/include/opencv/cxflann.h \
- /usr/local/include/opencv/cvtypes.h /usr/local/include/opencv/cvcompat.h \
- /usr/local/include/opencv/highgui.h \
- /usr/local/include/opencv/highgui.hpp
+ /usr/include/opencv/cxerror.h /usr/include/opencv/cvver.h \
+ /usr/include/opencv/cxcore.hpp /usr/include/opencv/cxmisc.h \
+ /usr/include/opencv/cxoperations.hpp /usr/include/opencv/cxmat.hpp \
+ /usr/include/opencv/cxflann.h /usr/include/opencv/cvtypes.h \
+ /usr/include/opencv/cvcompat.h /usr/include/opencv/highgui.h \
+ /usr/include/opencv/highgui.hpp
 
 ../config.h:
 
@@ -641,11 +639,11 @@ libgstimgspot_la-gstimgspot.lo: gstimgspot.c ../config.h \
 
 gstimgspot.h:
 
-/usr/local/include/opencv/cv.h:
+/usr/include/opencv/cv.h:
 
-/usr/local/include/opencv/cxcore.h:
+/usr/include/opencv/cxcore.h:
 
-/usr/local/include/opencv/cxtypes.h:
+/usr/include/opencv/cxtypes.h:
 
 /usr/include/assert.h:
 
@@ -679,26 +677,24 @@ gstimgspot.h:
 
 /usr/include/bits/mathinline.h:
 
-/usr/local/include/opencv/cxerror.h:
+/usr/include/opencv/cxerror.h:
 
-/usr/local/include/opencv/cvver.h:
+/usr/include/opencv/cvver.h:
 
-/usr/local/include/opencv/cxcore.hpp:
+/usr/include/opencv/cxcore.hpp:
 
-/usr/local/include/opencv/cxmisc.h:
+/usr/include/opencv/cxmisc.h:
 
-/usr/local/include/opencv/cvconfig.h:
+/usr/include/opencv/cxoperations.hpp:
 
-/usr/local/include/opencv/cxoperations.hpp:
+/usr/include/opencv/cxmat.hpp:
 
-/usr/local/include/opencv/cxmat.hpp:
+/usr/include/opencv/cxflann.h:
 
-/usr/local/include/opencv/cxflann.h:
+/usr/include/opencv/cvtypes.h:
 
-/usr/local/include/opencv/cvtypes.h:
+/usr/include/opencv/cvcompat.h:
 
-/usr/local/include/opencv/cvcompat.h:
+/usr/include/opencv/highgui.h:
 
-/usr/local/include/opencv/highgui.h:
-
-/usr/local/include/opencv/highgui.hpp:
+/usr/include/opencv/highgui.hpp:

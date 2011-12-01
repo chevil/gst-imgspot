@@ -8,7 +8,7 @@ raise "Usage: #{$0} videodevice imagesdir [algorithm=surf] [minscore=30]" unless
 $videodev=ARGV[0]
 $imgdir=ARGV[1]
 
-if ( ARGV.length == 3 )
+if ( ARGV.length >= 3 )
   $algorithm=ARGV[2]
 else
   $algorithm = 'surf'
