@@ -59,6 +59,7 @@
 
 #include <gst/gst.h>
 #include <cv.h>
+#include <pthread.h>
 #include <highgui.h>
 
 G_BEGIN_DECLS
@@ -97,6 +98,8 @@ struct _GstImgSpot
   gint nb_loaded_images;
   gint previous;
   gchar **loaded_images;
+
+  pthread_mutex_t mutex;
 
   // for histograms
   CvHistogram **loaded_hist;

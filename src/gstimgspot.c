@@ -60,6 +60,7 @@
 #endif
 
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <gst/gst.h>
@@ -264,6 +265,7 @@ gst_imgspot_init (GstImgSpot * filter,
   filter->width = DEFAULT_WIDTH;
   filter->height = DEFAULT_HEIGHT;
   filter->minscore = DEFAULT_MINSCORE;
+  pthread_mutex_init(&filter->mutex, NULL);
 
   // data for loaded images
   filter->nb_loaded_images=0;
@@ -289,7 +291,7 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
          printf( "gstimgspot : wrong algorithm : %s.\n", (char *) g_value_get_string (value));
          break;
       }
-      printf( "gstimgspot : setting algorithm : %s.\n", (char *) g_value_get_string (value));
+      // printf( "gstimgspot : setting algorithm : %s.\n", (char *) g_value_get_string (value));
       if ( filter->nb_loaded_images > 0 )
       {
          printf( "gstimgspot : reloading images : %s.\n", (char *) g_value_get_string (value));
@@ -302,7 +304,9 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
       filter->imgdir = (char *) malloc( strlen( (char *) g_value_get_string (value) ) + 1 );
       strcpy( filter->imgdir, (char *) g_value_get_string (value) );
       printf( "gstimgspot : Loading images from : %s.\n", filter->imgdir, filter->algorithm);
+      pthread_mutex_lock(&filter->mutex);
       gst_imgspot_load_images (filter);
+      pthread_mutex_unlock(&filter->mutex);
       break;
     case PROP_WIDTH:
       nwidth = g_value_get_int (value);
@@ -409,6 +413,7 @@ gst_imgspot_finalize (GObject * object)
   GstImgSpot *filter;
   filter = GST_IMGSPOT (object);
 
+  pthread_mutex_destroy(&filter->mutex);
   if (filter->incomingImage) {
     cvReleaseImageHeader (&filter->incomingImage);
   }
@@ -438,6 +443,8 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
     printf( "gstimgspot : chain : something is wrong\n");
     return GST_FLOW_OK;
   }
+
+  pthread_mutex_lock(&filter->mutex);
 
   if ( (int)start_t == 0 ) time( &start_t );
   filter->incomingImage->imageData = (char *) GST_BUFFER_DATA (buf);
@@ -668,6 +675,7 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
   } // algorithm = match
 
   cvReleaseImage( &cesized_image );
+  pthread_mutex_unlock(&filter->mutex);
 
   return gst_pad_push (filter->srcpad, buf);
 }
@@ -722,6 +730,11 @@ gst_imgspot_load_images (GstImgSpot * filter)
          }
          if ( strcmp( filter->algorithm, "surf" ) == 0 )
          {
+           if ( storage != NULL )
+           {
+             cvReleaseMemStorage( &storage );
+             storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
+           }
            free( filter->keypoints );
            free( filter->descriptors );
            filter->keypoints=NULL;

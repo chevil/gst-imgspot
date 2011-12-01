@@ -206,6 +206,16 @@ class PlayerWindow(gtk.Window):
         hbox.pack_start(hscale)
         self.hscale = hscale
 
+        hbox2 = gtk.HBox()
+        vbox.pack_start(hbox2, fill=False, expand=False)
+        imglabel = gtk.Label("Image directory")
+        hbox2.pack_start(imglabel)
+        imgentry = gtk.Entry()
+        imgentry.set_text( imgdir )
+        self.imgentry = imgentry
+        imgentry.connect('activate', self.new_image_directory)
+        hbox2.pack_start(imgentry)
+
         self.videowidget.connect_after('realize',
                                        lambda *x: self.play_toggled())
 
@@ -220,6 +230,12 @@ class PlayerWindow(gtk.Window):
                 self.update_id = gobject.timeout_add(self.UPDATE_INTERVAL,
                                                      self.update_scale_cb)
             self.button.add(self.pause_image)
+
+    def new_image_directory(self, entry):
+        w.player.pause()
+        imgdir =  entry.get_text()
+        spotter.set_property("imgdir", imgdir );
+        w.player.play()
 
     def scale_format_value_cb(self, scale, value):
         if self.p_duration == -1:
@@ -288,6 +304,9 @@ class PlayerWindow(gtk.Window):
 
 def main(args):
     global w
+    global imgdir
+    global spotter
+
     def usage():
         sys.stderr.write("usage: %s videofile imgdir [algorithm=surf] [minscore=30]\n" % args[0])
         sys.exit(1)
@@ -296,8 +315,6 @@ def main(args):
     # handlers to get called.
     gobject.type_register(PlayerWindow)
     gobject.type_register(VideoWidget)
-
-    w = PlayerWindow()
 
     if len(args) < 3:
         usage()
@@ -320,6 +337,8 @@ def main(args):
     if not gst.uri_is_valid(uri):
         sys.stderr.write("Error: Invalid URI: %s\n" % uri)
         sys.exit(1)
+
+    w = PlayerWindow()
 
     w.load_file(uri)
 
