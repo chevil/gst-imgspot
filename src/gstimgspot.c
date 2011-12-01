@@ -295,7 +295,10 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
       if ( filter->nb_loaded_images > 0 )
       {
          printf( "gstimgspot : reloading images : %s.\n", (char *) g_value_get_string (value));
+         pthread_mutex_lock(&filter->mutex);
+         filter->previous=-1;
          gst_imgspot_load_images (filter);
+         pthread_mutex_unlock(&filter->mutex);
       }
       filter->algorithm = (char *) malloc( strlen ( (char *) g_value_get_string (value) ) + 1 );
       strcpy( filter->algorithm, (char *) g_value_get_string (value) );
@@ -305,6 +308,7 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
       strcpy( filter->imgdir, (char *) g_value_get_string (value) );
       printf( "gstimgspot : Loading images from : %s.\n", filter->imgdir, filter->algorithm);
       pthread_mutex_lock(&filter->mutex);
+      filter->previous=-1;
       gst_imgspot_load_images (filter);
       pthread_mutex_unlock(&filter->mutex);
       break;
