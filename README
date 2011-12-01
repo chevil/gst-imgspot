@@ -11,7 +11,7 @@ when executing a script.
 The plugin uses OpenCV for the recognition of images.
 
 To use it on Ubuntu, first install the dependencies (on maverick) :
-> sudo apt-get install gstreamer-0.10 libgstreamer-plugins-base0.10-0 libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev libcv-dev libcvaux-dev libhighgui-dev libgst-ruby ruby libreadline-ruby
+> sudo apt-get install gstreamer-0.10 libgstreamer-plugins-base0.10-0 libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev libcv-dev libcvaux-dev libhighgui-dev python
 
 Then compile the plugins with :
 
@@ -22,12 +22,12 @@ Then compile the plugins with :
 Then go to the script directory and launch the analysis of a video with :
 
 > cd scripts
-> ruby videofeed.rb ../data/slides.mp4 ../data/images
+> python videofeed.py ../data/slides.mp4 ../data/images
 
 or the analysis from a video camera (v4l2) with :
 
 > cd scripts
-> ruby v4l2feed.rb /dev/video0 ../data/images
+> python v4l2feed.py /dev/video0 ../data/images
 
 The scripts take two additional optional arguments,
 that are optional because they have default values :

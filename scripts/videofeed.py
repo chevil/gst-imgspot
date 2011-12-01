@@ -7,6 +7,7 @@ import time
 pygtk.require('2.0')
 
 import sys
+import os
 
 import gobject
 gobject.threads_init()
@@ -313,11 +314,14 @@ def main(args):
     else :
        minscore = "30"
 
-    if not gst.uri_is_valid(args[1]):
-        sys.stderr.write("Error: Invalid URI: %s\n" % args[1])
+    uri = "file://"+os.getcwd()+"/"+args[1]
+    print "playing : %s" % uri
+
+    if not gst.uri_is_valid(uri):
+        sys.stderr.write("Error: Invalid URI: %s\n" % uri)
         sys.exit(1)
 
-    w.load_file(args[1])
+    w.load_file(uri)
 
     bin = gst.Bin("my-bin")
     ffmpegcolorspace = gst.element_factory_make("ffmpegcolorspace")
