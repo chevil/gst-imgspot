@@ -3,6 +3,7 @@
 # vi:si:et:sw=4:sts=4:ts=4
 
 import pygtk
+import time
 pygtk.require('2.0')
 
 import sys
@@ -52,7 +53,10 @@ class GstPlayer:
         elif t == gst.MESSAGE_ELEMENT:
              st = message.structure
              if st.get_name() == "imgspot":
-                print "imgspot : %s : image spotted : %s at %s (score=%d)" % (st["algorithm"], st["name"], hscale.get_value(), st["score"])
+                w.p_position, w.p_duration = w.player.query_position()
+                gm = time.gmtime(w.p_position/1000000000)
+                stime = "%.2d:%.2d:%.2d" % ( gm.tm_hour, gm.tm_min, gm.tm_sec )
+                print "imgspot : %s : image spotted : %s at %s (score=%d)" % (st["algorithm"], st["name"], stime, st["score"])
         elif t == gst.MESSAGE_EOS:
             if self.on_eos:
                 self.on_eos()
@@ -282,6 +286,7 @@ class PlayerWindow(gtk.Window):
         return True
 
 def main(args):
+    global w
     def usage():
         sys.stderr.write("usage: %s videofile imgdir [algorithm=surf] [minscore=30]\n" % args[0])
         sys.exit(1)
