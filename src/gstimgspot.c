@@ -421,7 +421,7 @@ gst_imgspot_finalize (GObject * object)
     cvReleaseImage (&filter->incomingImage);
   }
   if (filter->gray) {
-    cvReleaseImageHeader (&filter->gray);
+    cvReleaseImage (&filter->gray);
   }
 
 }
