@@ -104,6 +104,7 @@ struct _GstImgSpot
   // for histograms
   CvHistogram **loaded_hist;
   // for surf
+  CvMemStorage* storage;
   CvSeq **keypoints;
   CvSeq **descriptors;
   // for match

@@ -87,9 +87,10 @@ enum
   PROP_OUTPUT
 };
 
-static CvMemStorage* storage = NULL;
 static time_t start_t=0;
-static time_t current_t;
+static time_t pcurrent_t=0;
+static time_t current_t=0;
+static int nbframes=0;
 
 // SURF proximity calculations
 double
@@ -181,7 +182,6 @@ static gboolean gst_imgspot_set_caps (GstPad * pad, GstCaps * caps);
 static GstFlowReturn gst_imgspot_chain (GstPad * pad, GstBuffer * buf);
 
 static void gst_imgspot_load_images (GstImgSpot * filter);
-static void gst_imgspot_match (IplImage * input, double *lower_dist);
 
 /* GObject vmethod implementations */
 
@@ -271,6 +271,9 @@ gst_imgspot_init (GstImgSpot * filter,
   filter->loaded_images=NULL;
   filter->loaded_hist=NULL;
   filter->previous = -1;
+  filter->keypoints = NULL;
+  filter->descriptors = NULL;
+  filter->storage = NULL;
 }
 
 static void
@@ -296,6 +299,7 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
          printf( "gstimgspot : reloading images : %s.\n", (char *) g_value_get_string (value));
          pthread_mutex_lock(&filter->mutex);
          filter->previous=-1;
+         nbframes=0;
          gst_imgspot_load_images (filter);
          pthread_mutex_unlock(&filter->mutex);
       }
@@ -308,6 +312,7 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
       printf( "gstimgspot : Loading images from : %s.\n", filter->imgdir, filter->algorithm);
       pthread_mutex_lock(&filter->mutex);
       filter->previous=-1;
+      nbframes=0;
       gst_imgspot_load_images (filter);
       pthread_mutex_unlock(&filter->mutex);
       break;
@@ -423,7 +428,10 @@ gst_imgspot_finalize (GObject * object)
   if (filter->gray) {
     cvReleaseImage (&filter->gray);
   }
-
+  if ( filter->storage != NULL )
+  {
+    cvReleaseMemStorage( &filter->storage );
+  }
 }
 
 /* chain function
@@ -447,9 +455,21 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
     return GST_FLOW_OK;
   }
 
+  // first frames are not processed bacause some gst plugins might not be initialized
+  if ( (int)start_t == 0 ) time( &start_t );
+  time( &current_t );
+  if ( current_t-pcurrent_t > 2 && pcurrent_t != 0 ) 
+  {
+     // printf( "gstimgspot : video input has been paused\n" );
+     nbframes=0; // there has been a pause
+  }
+  pcurrent_t=current_t;
+
+  nbframes++;
+  if ( nbframes < 10 ) return GST_FLOW_OK;
+
   pthread_mutex_lock(&filter->mutex);
 
-  if ( (int)start_t == 0 ) time( &start_t );
   memcpy( filter->incomingImage->imageData, (char *) GST_BUFFER_DATA (buf), (size_t) GST_BUFFER_SIZE (buf) );
 
   // process the new frame
@@ -511,7 +531,6 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
              time_t ptime;
              struct tm *ltime;
 
-             time( &current_t );
              ptime = current_t-start_t;
              ltime = gmtime( &ptime );
              printf( "gstimgspot : histogram : image %s at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
@@ -546,10 +565,10 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
      CvSeq *imageKeypoints = 0, *imageDescriptors = 0;
      CvSeqReader reader, kreader;
 
-     if ( storage == NULL ) storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
+     if ( filter->storage == NULL ) filter->storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
 
      cvCvtColor(cesized_image, filter->gray, CV_BGR2GRAY);
-     cvExtractSURF( filter->gray, 0, &imageKeypoints, &imageDescriptors, storage, cvSURFParams(500, 1), 0 );
+     cvExtractSURF( filter->gray, 0, &imageKeypoints, &imageDescriptors, filter->storage, cvSURFParams(500, 1), 0 );
 
      spotted = -1;
      nbMaxPoints = 0;
@@ -587,7 +606,6 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
            time_t ptime;
            struct tm *ltime;
 
-           time( &current_t );
            ptime = current_t-start_t;
            ltime = gmtime( &ptime );
            printf( "gstimgspot : surf : image %s  at %.2d:%.2d:%.2d (score=%d)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, nbMaxPoints );
@@ -652,7 +670,6 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
            struct tm *ltime;
            char cmd[1024];
 
-           time( &current_t );
            ptime = current_t-start_t;
            ltime = gmtime( &ptime );
            printf( "gstimgspot : match : image %s  at %.2d:%.2d:%.2d (score=%f)\n", filter->loaded_images[spotted], ltime->tm_hour, ltime->tm_min, ltime->tm_sec, mdist );       
@@ -728,10 +745,10 @@ gst_imgspot_load_images (GstImgSpot * filter)
          }
          if ( strcmp( filter->algorithm, "surf" ) == 0 )
          {
-           if ( storage != NULL )
+           if ( filter->storage != NULL )
            {
-             cvReleaseMemStorage( &storage );
-             storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
+             cvReleaseMemStorage( &filter->storage );
+             filter->storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
            }
            free( filter->keypoints );
            free( filter->descriptors );
@@ -845,12 +862,12 @@ gst_imgspot_load_images (GstImgSpot * filter)
              {
                 IplImage *gray = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
 
-                if ( storage == NULL ) storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
+                if ( filter->storage == NULL ) filter->storage = cvCreateMemStorage(1024*1024); // blocks of 1Mb
 
                 cvCvtColor(resized_image, gray, CV_BGR2GRAY);
                 filter->keypoints[icount]=0;
                 filter->descriptors[icount]=0;
-                cvExtractSURF( gray, 0, &filter->keypoints[icount], &filter->descriptors[icount], storage, cvSURFParams(500, 1), 0 );
+                cvExtractSURF( gray, 0, &filter->keypoints[icount], &filter->descriptors[icount], filter->storage, cvSURFParams(500, 1), 0 );
 
                 cvReleaseImage( &gray );
                   

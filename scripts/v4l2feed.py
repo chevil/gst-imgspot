@@ -23,7 +23,7 @@ class GTK_Main:
 		vbox.pack_start(hbox, False)
 		hbox.set_border_width(10)
 		hbox.pack_start(gtk.Label())
-		self.button = gtk.Button("Start")
+		self.button = gtk.Button("Stop")
 		self.button.connect("clicked", self.start_stop)
 		hbox.pack_start(self.button, False)
 		self.button2 = gtk.Button("Quit")
@@ -39,13 +39,18 @@ class GTK_Main:
 		window.show_all()
 
 		# Set up the gstreamer pipeline
-		self.player = gst.parse_launch ("v4l2src device="+videodev+"  ! video/x-raw-yuv ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm="+algorithm+" imgdir="+imgdir+" minscore="+minscore+" output=bus ! ffmpegcolorspace ! timeoverlay ! autovideosink")
+		self.player = gst.parse_launch ("v4l2src device="+videodev+"  ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm="+algorithm+" imgdir="+imgdir+" minscore="+minscore+" output=bus ! ffmpegcolorspace ! timeoverlay ! autovideosink")
 
 		bus = self.player.get_bus()
 		bus.add_signal_watch()
 		bus.enable_sync_message_emission()
 		bus.connect("message", self.on_message)
 		bus.connect("sync-message::element", self.on_sync_message)
+
+		self.player.set_state(gst.STATE_PLAYING)
+		self.player.set_state(gst.STATE_PLAYING)
+		self.player.set_state(gst.STATE_PLAYING)
+		self.player.set_state(gst.STATE_PLAYING)
 
 	def start_stop(self, w):
 		if self.button.get_label() == "Start":
