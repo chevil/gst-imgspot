@@ -90,7 +90,6 @@ enum
 static CvMemStorage* storage = NULL;
 static time_t start_t=0;
 static time_t current_t;
-static time_t nbframes=0;;
 
 // SURF proximity calculations
 double
@@ -402,7 +401,7 @@ gst_imgspot_set_caps (GstPad * pad, GstCaps * caps)
   gst_structure_get_int (structure, "width", &width);
   gst_structure_get_int (structure, "height", &height);
 
-  filter->incomingImage = cvCreateImageHeader (cvSize (width, height), IPL_DEPTH_8U, 3);
+  filter->incomingImage = cvCreateImage(cvSize (width, height), IPL_DEPTH_8U, 3);
   filter->gray = cvCreateImage(cvSize(filter->width,filter->height), IPL_DEPTH_8U, 1);
 
   otherpad = (pad == filter->srcpad) ? filter->sinkpad : filter->srcpad;
@@ -419,7 +418,7 @@ gst_imgspot_finalize (GObject * object)
 
   pthread_mutex_destroy(&filter->mutex);
   if (filter->incomingImage) {
-    cvReleaseImageHeader (&filter->incomingImage);
+    cvReleaseImage (&filter->incomingImage);
   }
   if (filter->gray) {
     cvReleaseImageHeader (&filter->gray);
@@ -448,14 +447,10 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
     return GST_FLOW_OK;
   }
 
-  // strange problem with camera
-  nbframes++;
-  if ( nbframes < 10 ) return GST_FLOW_OK;
-
   pthread_mutex_lock(&filter->mutex);
 
   if ( (int)start_t == 0 ) time( &start_t );
-  filter->incomingImage->imageData = (char *) GST_BUFFER_DATA (buf);
+  memcpy( filter->incomingImage->imageData, (char *) GST_BUFFER_DATA (buf), (size_t) GST_BUFFER_SIZE (buf) );
 
   // process the new frame
   cesized_image = cvCreateImage(cvSize(filter->width,filter->height), filter->incomingImage->depth, filter->incomingImage->nChannels);
@@ -689,11 +684,6 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
 }
 
 static void
-gst_imgspot_match (IplImage * input, double *lower_dist)
-{
-}
-
-static void
 gst_imgspot_load_images (GstImgSpot * filter)
 {
 
@@ -879,7 +869,6 @@ gst_imgspot_load_images (GstImgSpot * filter)
   }
 
 }
-
 
 /* entry point to initialize the plug-in
  * initialize the plug-in itself
