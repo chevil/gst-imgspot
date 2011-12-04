@@ -59,6 +59,8 @@ class GTK_Main:
                         self.starttime = time.time()
 		else:
 			self.player.set_state(gst.STATE_NULL)
+                        spotter = self.player.get_by_name( "imgspot0" )
+                        spotter.set_property("reset", 1 );
 			self.button.set_label("Start")
 
         def new_image_directory(self, entry):

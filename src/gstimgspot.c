@@ -84,7 +84,8 @@ enum
   PROP_WIDTH,
   PROP_HEIGHT,
   PROP_MINSCORE,
-  PROP_OUTPUT
+  PROP_OUTPUT,
+  PROP_RESET // not a real property
 };
 
 static time_t start_t=0;
@@ -231,6 +232,8 @@ gst_imgspot_class_init (GstImgSpotClass * klass)
       g_param_spec_float ("minscore", "Minscore", "Score to reach to be a true positive test.", 0.1, 1000, 0.1, G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_OUTPUT,
       g_param_spec_string ("output", "Output", "Output mode : console or bus.", NULL, G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, PROP_RESET,
+      g_param_spec_boolean ("reset", "Reset", "Reset number of frames to 0.", FALSE, G_PARAM_READWRITE));
 }
 
 /* initialize the new element
@@ -281,7 +284,7 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
   GstImgSpot *filter = GST_IMGSPOT (object);
-  int nwidth, nheight;
+  int nwidth, nheight, reset;
   float nminscore;
 
   switch (prop_id) {
@@ -353,6 +356,10 @@ gst_imgspot_set_property (GObject * object, guint prop_id,
       filter->output = (char *) malloc( strlen ( (char *) g_value_get_string (value) ) + 1 );
       strcpy( filter->output, (char *) g_value_get_string (value) );
       break;
+    case PROP_RESET:
+      reset = (int) g_value_get_boolean (value);
+      if ( reset ) nbframes=0;
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -383,6 +390,9 @@ gst_imgspot_get_property (GObject * object, guint prop_id,
       break;
     case PROP_OUTPUT:
       g_value_set_string (value, filter->output);
+      break;
+    case PROP_RESET:
+      g_value_set_boolean (value, FALSE);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -458,13 +468,9 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
   // first frames are not processed bacause some gst plugins might not be initialized
   if ( (int)start_t == 0 ) time( &start_t );
   time( &current_t );
-  if ( current_t-pcurrent_t > 2 && pcurrent_t != 0 ) 
-  {
-     // printf( "gstimgspot : video input has been paused\n" );
-     nbframes=0; // there has been a pause
-  }
   pcurrent_t=current_t;
 
+  // skip first camera frames
   nbframes++;
   if ( nbframes < 10 ) return GST_FLOW_OK;
 
