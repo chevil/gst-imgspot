@@ -48,9 +48,7 @@ class GTK_Main:
 		bus.connect("sync-message::element", self.on_sync_message)
 
 		self.player.set_state(gst.STATE_PLAYING)
-		self.player.set_state(gst.STATE_PLAYING)
-		self.player.set_state(gst.STATE_PLAYING)
-		self.player.set_state(gst.STATE_PLAYING)
+                self.starttime = time.time()
 
 	def start_stop(self, w):
 		if self.button.get_label() == "Start":

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, os, time, threading
+import sys, os, time, threading, thread
 import pygtk, gtk, gobject
 import pygst
 pygst.require("0.10")
@@ -26,7 +26,6 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
         spotter.set_property("imgdir", params["imgdir"][0] );
         w.player.set_state(gst.STATE_PLAYING)
 	w.button.set_label("Stop")
-        w.starttime = time.time()
 
 class HTTPServerThread(threading.Thread):
     def run(self) :
@@ -65,7 +64,7 @@ class GTK_Main:
 		window.show_all()
 
 		# Set up the gstreamer pipeline
-		self.player = gst.parse_launch ("v4l2src device="+videodev+"  ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm="+algorithm+" imgdir="+imgdir+" minscore="+minscore+" output=bus ! ffmpegcolorspace ! timeoverlay ! autovideosink")
+		self.player = gst.parse_launch ("v4l2src device="+videodev1+" ! video/x-raw-yuv,width=320,height=240 ! ffmpegcolorspace ! imgspot width=320 height=240 algorithm="+algorithm+" imgdir="+imgdir+" minscore="+minscore+" output=bus ! ffmpegcolorspace ! timeoverlay ! videomixer name=mix sink_0::alpha=1.0 sink_1::alpha=0.0 ! autovideosink v4l2src device="+videodev2+" ! video/x-raw-yuv,width=320,height=240 ! ffmpegcolorspace ! mix.")
 
 		bus = self.player.get_bus()
 		bus.add_signal_watch()
@@ -74,9 +73,7 @@ class GTK_Main:
 		bus.connect("sync-message::element", self.on_sync_message)
 
 		self.player.set_state(gst.STATE_PLAYING)
-		self.player.set_state(gst.STATE_PLAYING)
-		self.player.set_state(gst.STATE_PLAYING)
-		self.player.set_state(gst.STATE_PLAYING)
+                self.starttime = time.time()
 
 	def start_stop(self, w):
 		if self.button.get_label() == "Start":
@@ -91,6 +88,7 @@ class GTK_Main:
 
         def new_image_directory(self, entry):
                 self.player.set_state(gst.STATE_NULL)
+		self.button.set_label("Start")
                 imgdir =  entry.get_text()
                 spotter = self.player.get_by_name( "imgspot0" )
                 spotter.set_property("imgdir", imgdir );
@@ -100,6 +98,12 @@ class GTK_Main:
 
 	def exit(self, widget, data=None):
 		gtk.main_quit()
+
+	def back_to_the_point(self):
+                mixer = self.player.get_by_name( "mix" )
+                pads=list(mixer.pads())
+                pads[0].props.alpha=0.0
+                pads[1].props.alpha=1.0
 
 	def on_message(self, bus, message):
 		t = message.type
@@ -113,6 +117,16 @@ class GTK_Main:
                       gm = time.gmtime(self.curtime-self.starttime)
                       stime = "%.2d:%.2d:%.2d" % ( gm.tm_hour, gm.tm_min, gm.tm_sec )
                       print "imgspot : %s : image spotted : %s at %s (score=%d)" % (st["algorithm"], st["name"], stime, st["score"])
+
+                      # an image has been detected, switch to other camera for 15 seconds
+                      mixer = self.player.get_by_name( "mix" )
+                      pads=list(mixer.pads())
+                      pads[0].props.alpha=1.0
+                      pads[1].props.alpha=0.0
+
+                      t = threading.Timer(15.0, self.back_to_the_point)
+                      t.start()
+
 		elif t == gst.MESSAGE_ERROR:
 			err, debug = message.parse_error()
 			print "Error: %s" % err, debug
@@ -134,7 +148,8 @@ class GTK_Main:
 
 def main(args):
 
-    global videodev
+    global videodev1
+    global videodev2
     global imgdir
     global algorithm
     global minscore
@@ -143,22 +158,23 @@ def main(args):
     global httpdt
 
     def usage():
-        sys.stderr.write("usage: %s videodevice imgdir [algorithm=surf] [minscore=30]\n" % args[0])
+        sys.stderr.write("usage: %s videodevice(slides) videodevice(speaker)  imgdir [algorithm=surf] [minscore=30]\n" % args[0])
         sys.exit(1)
 
-    if len(args) < 3:
+    if len(args) < 4:
         usage()
 
-    videodev = args[1]
-    imgdir = args[2]
+    videodev1 = args[1]
+    videodev2 = args[2]
+    imgdir = args[3]
 
-    if len(args) >= 4 :
-       algorithm=args[3]
+    if len(args) >= 5 :
+       algorithm=args[4]
     else :
        algorithm = 'surf'
 
-    if len(args) == 5 :
-       minscore=args[4]
+    if len(args) == 6 :
+       minscore=args[5]
     else :
        minscore = "30"
 
