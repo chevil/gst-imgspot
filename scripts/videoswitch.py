@@ -23,7 +23,9 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
         w.player.set_state(gst.STATE_NULL)
 	w.button.set_label("Start")
         spotter = w.player.get_by_name( "imgspot0" )
-        spotter.set_property("imgdir", params["imgdir"][0] );
+        imgdir=params["imgdir"][0]
+        spotter.set_property("imgdir", imgdir );
+        w.imgentry.set_text( imgdir )
         w.player.set_state(gst.STATE_PLAYING)
 	w.button.set_label("Stop")
 
@@ -57,10 +59,10 @@ class GTK_Main:
 		hbox.add(gtk.Label())
                 imglabel = gtk.Label("Image directory")
                 hbox.pack_start(imglabel)
-                imgentry = gtk.Entry()
-                imgentry.set_text( imgdir )
-                hbox.pack_start(imgentry)
-                imgentry.connect('activate', self.new_image_directory)
+                self.imgentry = gtk.Entry()
+                self.imgentry.set_text( imgdir )
+                hbox.pack_start(self.imgentry)
+                self.imgentry.connect('activate', self.new_image_directory)
 		window.show_all()
 
 		# Set up the gstreamer pipeline
