@@ -6,8 +6,7 @@ import pygtk
 import time
 pygtk.require('2.0')
 
-import sys
-import os
+import sys, os, threading
 
 import gobject
 gobject.threads_init()
@@ -18,6 +17,32 @@ import gst
 import gst.interfaces
 import gtk
 gtk.gdk.threads_init()
+
+from urlparse import urlparse, parse_qs
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+
+HOST, PORT = "localhost", 9999
+
+class jsCommandsHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        self.send_response(200, 'OK')
+        self.send_header('Content-type', 'html')
+        self.end_headers()
+        ppath = urlparse(self.path)
+        params = parse_qs(ppath[4])
+        # print params
+        w.player.player.set_state(gst.STATE_NULL)
+        w.button.set_label("Start")
+        imgdir=params["imgdir"][0]
+        spotter.set_property("imgdir", imgdir );
+        w.imgentry.set_text( imgdir )
+        w.player.player.set_state(gst.STATE_PLAYING)
+        w.button.set_label("Stop")
+
+class HTTPServerThread(threading.Thread):
+    def run(self) :
+        httpd.serve_forever()
 
 class GstPlayer:
     def __init__(self, videowidget):
@@ -210,11 +235,10 @@ class PlayerWindow(gtk.Window):
         vbox.pack_start(hbox2, fill=False, expand=False)
         imglabel = gtk.Label("Image directory")
         hbox2.pack_start(imglabel)
-        imgentry = gtk.Entry()
-        imgentry.set_text( imgdir )
-        self.imgentry = imgentry
-        imgentry.connect('activate', self.new_image_directory)
-        hbox2.pack_start(imgentry)
+        self.imgentry = gtk.Entry()
+        self.imgentry.set_text( imgdir )
+        self.imgentry.connect('activate', self.new_image_directory)
+        hbox2.pack_start(self.imgentry)
 
         self.videowidget.connect_after('realize',
                                        lambda *x: self.play_toggled())
@@ -306,6 +330,8 @@ def main(args):
     global w
     global imgdir
     global spotter
+    global httpd
+    global httpdt
 
     def usage():
         sys.stderr.write("usage: %s videofile imgdir [algorithm=surf] [minscore=30]\n" % args[0])
@@ -332,7 +358,6 @@ def main(args):
        minscore = "30"
 
     uri = "file://"+os.getcwd()+"/"+args[1]
-    print "playing : %s" % uri
 
     if not gst.uri_is_valid(uri):
         sys.stderr.write("Error: Invalid URI: %s\n" % uri)
@@ -364,6 +389,13 @@ def main(args):
     w.player.set_property("video-sink", bin)
 
     w.show_all()
+
+    # start http command handler
+    httpd = HTTPServer((HOST, PORT), jsCommandsHandler)
+
+    httpdt = HTTPServerThread()
+    httpdt.setDaemon(True)
+    httpdt.start()
 
     gtk.main()
 
