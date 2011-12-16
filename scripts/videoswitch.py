@@ -160,7 +160,7 @@ def main(args):
     global httpdt
 
     def usage():
-        sys.stderr.write("usage: %s videodevice(slides) videodevice(speaker)  imgdir [algorithm=surf] [minscore=30]\n" % args[0])
+        sys.stderr.write("usage: %s videodevice(slides) videodevice(speaker) imgdir [algorithm=surf] [minscore=30]\n" % args[0])
         sys.exit(1)
 
     if len(args) < 4:
