@@ -22,12 +22,25 @@
 # resizing a channel
 # POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
 
+# recording the output
+# POST /outputs/record params : {file: '/path/recording.mp4'}  
+# note : as the pipe is restarted when you change some parameters,
+# we actually have to record in a file name with the date
+# not to crush previous recordings
+# the real name of the recording will be :
+# /tmp/output-mm-dd-hh:mm:ss.avi for example
+
+# starting and stopping the mixer
+# POST /outputs/state params : {state: start|stop}  
+
 import sys, os, time, threading, thread
 import pygtk, gtk, gobject
 import pygst
 import cgi
 pygst.require("0.10")
 import gst
+import datetime
+
 
 from urlparse import urlparse, parse_qs
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
@@ -131,6 +144,37 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'html')
             self.end_headers()
 
+        elif self.path == "/outputs/record":
+          if "file" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          mixer.recfile=params['file'][0]
+          mixer.launch_pipe()
+          self.send_response(200, 'OK')
+          self.send_header('Content-type', 'html')
+          self.end_headers()
+
+        elif self.path == "/outputs/state":
+          if "state" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          state=params['state'][0]
+          if state != "start" and state != "stop":
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+          self.send_response(200, 'OK')
+          self.send_header('Content-type', 'html')
+          self.end_headers()
+          if state == "start":
+             mixer.launch_pipe()
+          if state == "stop":
+	     mixer.player.set_state(gst.STATE_NULL)
+
         else:
           self.send_response(404, 'Not Found')
           self.send_header('Content-type', 'html')
@@ -146,6 +190,7 @@ class Gst4chMixer:
 
 	def __init__(self):
 
+                self.recfile=""
                 self.uri=[]
                 self.xpos=[]
                 self.ypos=[]
@@ -190,7 +235,6 @@ class Gst4chMixer:
 		bus.connect("message", self.on_message)
                 bus.connect("sync-message::element", self.on_sync_message)
 
-		self.player.set_state(gst.STATE_PLAYING)
                 self.starttime = time.time()
 
 	def on_message(self, bus, message):
@@ -286,8 +330,12 @@ class Gst4chMixer:
                     else:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
 
-                pipecmd += "! xvimagesink \
-                           videotestsrc pattern=snow name=background \
+                if ( self.recfile != "" ):
+                    pipecmd += "! tee name=vidmixout ! queue ! xvimagesink vidmixout. !  queue ! videorate ! video/x-raw-yuv,framerate=30/1 ! queue ! mux. "
+                else:
+                    pipecmd += "! xvimagesink "
+
+                pipecmd += "videotestsrc pattern=snow name=background \
                            ! video/x-raw-yuv,width=%d,height=%d \
                            ! mix.sink_0 " % ( self.txsize, self.tysize );
 
@@ -304,6 +352,15 @@ class Gst4chMixer:
                                       videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i], self.width[i], self.height[i], i+1 );
                     else:
                        pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
+
+                if ( self.recfile != "" ):
+                    #the real name uses a date in it
+                    #not to override previous recordings
+                    extension = self.recfile[-3:]
+                    basename = self.recfile[:-4]
+                    now = datetime.datetime.now()
+                    pipecmd += "\
+                                avimux name=mux ! filesink location=%s-%.2d-%.2d-%.2d:%.2d:%.2d.%s " % ( basename, now.month, now.day, now.hour, now.minute, now.second, extension );
 
                 print pipecmd
 
