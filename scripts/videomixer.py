@@ -11,10 +11,16 @@
 # adding a video source :
 # POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}  
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}  
-# POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mp4'}  
+# POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
 
 # removing a video source :
 # POST /inputs/remove params : {channel: n}  
+
+# positioning a channel
+# POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
+
+# resizing a channel
+# POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
 
 import sys, os, time, threading, thread
 import pygtk, gtk, gobject
@@ -80,6 +86,51 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
+
+        elif self.path == "/inputs/move":
+          if "channel" not in params or "posx" not in params or "posy" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          else:
+            channel = int( params['channel'][0] )
+            posx = int( params['posx'][0] )
+            posy = int( params['posy'][0] )
+            if posx < 0 or posy < 0 or channel < 0 or channel > 3:
+              self.send_response(400, 'Bad request')
+              self.send_header('Content-type', 'html')
+              self.end_headers()
+              return
+            mixer.xpos[channel]=posx
+            mixer.ypos[channel]=posy
+            mixer.position_channels()
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+
+        elif self.path == "/inputs/resize":
+          if "channel" not in params or "width" not in params or "height" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          else:
+            channel = int( params['channel'][0] )
+            width = int( params['width'][0] )
+            height = int( params['height'][0] )
+            if width < 0 or height < 0 or channel < 0 or channel > 3:
+              self.send_response(400, 'Bad request')
+              self.send_header('Content-type', 'html')
+              self.end_headers()
+              return
+            mixer.width[channel]=width
+            mixer.height[channel]=height
+            mixer.resize_channels()
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+
         else:
           self.send_response(404, 'Not Found')
           self.send_header('Content-type', 'html')
@@ -94,16 +145,6 @@ gtk.gdk.threads_init()
 class Gst4chMixer:
 
 	def __init__(self):
-
-                window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-                window.set_title("videomixer.py")
-                window.set_default_size(640, 480)
-                window.connect("destroy", gtk.main_quit, "WM destroy")
-                vbox = gtk.VBox()
-                window.add(vbox)
-                self.movie_window = gtk.DrawingArea()
-                vbox.add(self.movie_window)
-                window.show_all()
 
                 self.uri=[]
                 self.xpos=[]
@@ -121,6 +162,24 @@ class Gst4chMixer:
                    self.ypos.append( 0 );
                    self.width.append( 320 );
                    self.height.append( 240 );
+
+                self.txsize=0
+                self.tysize=0
+                for i in range(0, 4):
+                   if ( self.xpos[i]+self.width[i] ) > self.txsize :
+                      self.txsize=self.xpos[i]+self.width[i]
+                   if ( self.ypos[i]+self.height[i] ) > self.tysize :
+                      self.tysize=self.ypos[i]+self.height[i]
+
+                self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+                self.window.set_title("videomixer.py")
+                self.window.connect("destroy", gtk.main_quit, "WM destroy")
+                self.window.set_default_size(self.txsize, self.tysize)
+                vbox = gtk.VBox()
+                self.window.add(vbox)
+                self.movie_window = gtk.DrawingArea()
+                vbox.add(self.movie_window)
+                self.window.show_all()
 
                 self.player = None
                 self.launch_pipe()
@@ -172,6 +231,42 @@ class Gst4chMixer:
                 self.uri[channel]=""
                 self.launch_pipe()
 
+	def position_channels(self):
+                mixer = self.player.get_by_name( "mix" )
+
+                self.txsize=0
+                self.tysize=0
+                for i in range(0, 4):
+                   if ( self.xpos[i]+self.width[i] ) > self.txsize :
+                      self.txsize=self.xpos[i]+self.width[i]
+                   if ( self.ypos[i]+self.height[i] ) > self.tysize :
+                      self.tysize=self.ypos[i]+self.height[i]
+
+                pads=list(mixer.sink_pads())
+                for j in range(0, len(pads)):
+                   for i in range(0, 4):
+                      if pads[j].props.zorder == i+1:
+                         pads[j].props.xpos=self.xpos[i]
+                         pads[j].props.ypos=self.ypos[i]
+                         # print "setting pad %d to %d %d" % ( j, self.xpos[i], self.ypos[i] )
+                   if pads[j].props.zorder == 0: #background pad
+                         videocap = gst.Caps("video/x-raw-yuv,width=%d,height=%d" % ( self.txsize, self.tysize ))
+                         print "setting caps to : video/x-raw-yuv,width=%d,height=%d" % ( self.txsize, self.tysize )
+                         pads[j].set_caps(videocap)
+                         videotestsrc = self.player.get_by_name( "background" )
+                         bpads=list(videotestsrc.pads())
+                         for k in range(0, len(bpads)):
+                             bpads[k].set_caps(videocap)
+
+                # all the dynamic stuff deosn't seem to work really
+                # relaunching the pipe for now
+                self.launch_pipe()
+
+	def resize_channels(self):
+                # all the dynamic stuff deosn't seem to work really
+                # relaunching the pipe for now
+                self.launch_pipe()
+
 	def launch_pipe(self):
                 # calculating global size
                 self.txsize=0
@@ -183,16 +278,16 @@ class Gst4chMixer:
                       self.tysize=self.ypos[i]+self.height[i]
 
                 pipecmd = "videomixer name=mix \
-                              sink_0::xpos=0 sink_0::ypos=0 "
+                              sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
 
                 for i in range(0, 4):
                     if self.uri[i] != "":
-                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=1 " % ( i+1, self.xpos[0], i+1, self.ypos[0], i+1 )
+                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=1 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
                     else:
-                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 " % ( i+1, self.xpos[0], i+1, self.ypos[0], i+1 )
+                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
 
                 pipecmd += "! xvimagesink \
-                           videotestsrc pattern=snow \
+                           videotestsrc pattern=snow name=background \
                            ! video/x-raw-yuv,width=%d,height=%d \
                            ! mix.sink_0 " % ( self.txsize, self.tysize );
 
@@ -200,10 +295,10 @@ class Gst4chMixer:
                     if ( self.uri[i] != "" ):
                        if self.uri[i][:7] == "file://":
                          pipecmd += " filesrc location=\"%s\" ! decodebin2 ! queue ! ffmpegcolorspace ! \
-                                      video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][7:], self.width[i], self.height[i], i+1 );
+                                      videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][7:], self.width[i], self.height[i], i+1 );
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src device=%s ! ffmpegcolorspace ! \
-                                      video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][9:], self.width[i], self.height[i], i+1 );
+                                      videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][9:], self.width[i], self.height[i], i+1 );
                        if self.uri[i][:7] == "http://":
                          pipecmd += " uridecodebin uri=\"%s\" ! decodebin ! queue ! ffmpegcolorspace ! \
                                       videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i], self.width[i], self.height[i], i+1 );
@@ -215,6 +310,8 @@ class Gst4chMixer:
 		if self.player != None : 
                    self.player.set_state(gst.STATE_NULL)
 		self.player = gst.parse_launch ( pipecmd )
+
+                self.window.resize(self.txsize, self.tysize)
 
 		bus = self.player.get_bus()
 		bus.add_signal_watch()
