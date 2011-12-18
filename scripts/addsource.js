@@ -4,11 +4,11 @@ var fs = require('fs');
 
 if ( process.argv.length  < 4 )
 {
-   console.log( "usage : "+process.argv[1]+" url|file|device channel" );
+   console.log( "usage : "+process.argv[1]+" channel url|file|device" );
    process.exit(-1);
 }
-url=process.argv[2];
-channel=process.argv[3];
+channel=process.argv[2];
+url=process.argv[3];
 
 var post_data = querystring.stringify({
     'url' : url,
