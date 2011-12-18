@@ -41,7 +41,6 @@ pygst.require("0.10")
 import gst
 import datetime
 
-
 from urlparse import urlparse, parse_qs
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
@@ -76,7 +75,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.send_header('Content-type', 'html')
                self.end_headers()
                return
-            mixer.add_source_on_channel( newsource, channel )
+            mixer.uri[channel]=newsource
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
@@ -95,7 +94,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.send_header('Content-type', 'html')
                self.end_headers()
                return
-            mixer.delete_source_on_channel( channel )
+            mixer.uri[channel]=""
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
@@ -117,7 +116,6 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
               return
             mixer.xpos[channel]=posx
             mixer.ypos[channel]=posy
-            mixer.position_channels()
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
@@ -139,7 +137,6 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
               return
             mixer.width[channel]=width
             mixer.height[channel]=height
-            mixer.resize_channels()
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
@@ -151,7 +148,6 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
           mixer.recfile=params['file'][0]
-          mixer.launch_pipe()
           self.send_response(200, 'OK')
           self.send_header('Content-type', 'html')
           self.end_headers()
@@ -267,14 +263,6 @@ class Gst4chMixer:
                         imagesink.set_xwindow_id(self.movie_window.window.xid)
                         gtk.gdk.threads_leave()
 
-	def add_source_on_channel(self, uri, channel):
-                self.uri[channel]=uri
-                self.launch_pipe()
-
-	def delete_source_on_channel(self, channel):
-                self.uri[channel]=""
-                self.launch_pipe()
-
 	def position_channels(self):
                 mixer = self.player.get_by_name( "mix" )
 
@@ -306,11 +294,6 @@ class Gst4chMixer:
                 # relaunching the pipe for now
                 self.launch_pipe()
 
-	def resize_channels(self):
-                # all the dynamic stuff deosn't seem to work really
-                # relaunching the pipe for now
-                self.launch_pipe()
-
 	def launch_pipe(self):
                 # calculating global size
                 self.txsize=0
@@ -321,7 +304,14 @@ class Gst4chMixer:
                    if ( self.ypos[i]+self.height[i] ) > self.tysize :
                       self.tysize=self.ypos[i]+self.height[i]
 
-                pipecmd = "videomixer name=mix \
+                pipecmd = ""
+
+                if ( self.recfile != "" ):
+                    pipecmd += "autoaudiosrc ! audioconvert ! audioresample ! audio/x-raw-int,rate=22050,width=16,channels=1 ! adder name=audiomix ! tee name=audmixout ! queue ! pulsesink audmixout. !  queue ! ffenc_aac ! queue ! mux. "
+                else:
+                    pipecmd += "autoaudiosrc ! audioconvert ! audioresample ! audio/x-raw-int,rate=22050,width=16,channels=1 ! adder name=audiomix ! queue ! autoaudiosink "
+
+                pipecmd += "videomixer name=mix \
                               sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
 
                 for i in range(0, 4):
@@ -331,7 +321,7 @@ class Gst4chMixer:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
 
                 if ( self.recfile != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue ! xvimagesink vidmixout. !  queue ! videorate ! video/x-raw-yuv,framerate=30/1 ! queue ! mux. "
+                    pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. !  queue ! ffenc_mpeg4 ! queue ! mux. "
                 else:
                     pipecmd += "! xvimagesink "
 
@@ -342,14 +332,16 @@ class Gst4chMixer:
                 for i in range(0, 4):
                     if ( self.uri[i] != "" ):
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " filesrc location=\"%s\" ! decodebin2 ! queue ! ffmpegcolorspace ! \
-                                      videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][7:], self.width[i], self.height[i], i+1 );
+                         pipecmd += " filesrc location=\"%s\" ! decodebin2 name=decodebin%d \
+                                      decodebin%d. ! queue ! ffmpegcolorspace !  videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
+                                      decodebin%d. ! audioconvert ! audioresample ! audio/x-raw-int,rate=22050,width=16,channels=1 ! audiomix." % ( self.uri[i][7:], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src device=%s ! ffmpegcolorspace ! \
                                       videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][9:], self.width[i], self.height[i], i+1 );
                        if self.uri[i][:7] == "http://":
-                         pipecmd += " uridecodebin uri=\"%s\" ! decodebin ! queue ! ffmpegcolorspace ! \
-                                      videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i], self.width[i], self.height[i], i+1 );
+                         pipecmd += " uridecodebin uri=\"%s\" ! decodebin2 name=decodebin%d \
+                                      decodebin%d. ! queue ! ffmpegcolorspace ! videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
+                                      decodebin%d. ! audioconvert ! audioresample ! audio/x-raw-int,rate=22050,width=16,channels=1 ! audiomix." % ( self.uri[i], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
                     else:
                        pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
 
