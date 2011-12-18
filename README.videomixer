@@ -1,0 +1,58 @@
+# this script is a four channel video mixer 
+# author : ydegoyon@gmail.com
+
+# the script takes commands from http ( by default on port 9999 )
+# at first it starts with a snow screen of 320x240 ( no emission )
+# then you can manipulate the video composition 
+# with the following commands:
+# 
+# adding a video source :
+# POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}  
+# POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}  
+# POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
+#
+# this command can be achieve by using the node.js script :
+# node addsource.js 1 file:///Videoz/video.avi
+
+# removing a video source :
+# POST /inputs/remove params : {channel: n}  
+#
+# this command can be achieve by using the node.js script :
+# node deletesource.js 1
+
+# positioning a channel
+# POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
+#
+# this command can be achieve by using the node.js script :
+# node movesource.js 1 <x> <y>
+
+# resizing a channel
+# POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
+#
+# this command can be achieve by using the node.js script :
+# node resizesource.js 1 <width> <height>
+
+# recording the output
+# POST /outputs/record params : {file: '/path/recording.mp4'}  
+# note : as the pipe is restarted when you change some parameters,
+# we actually have to record in a file name with the date
+# not to crush previous recordings
+# the real name of the recording will be :
+# /tmp/output-mm-dd-hh:mm:ss.mp4 for example
+#
+# this command can be achieve by using the node.js script :
+# node recordoutput.js <file>
+
+# starting and stopping the mixer
+# POST /outputs/state params : {state: start|stop}  
+# IMPORTANT NOTE : when you modify parameters of the mixer,
+# all we do is storing them until you restart the pipe,
+# so all your modifications will be visible
+# _only_ when you send a start message to the mixer.
+# this is due to some limitations in which parameters
+# can be modified dynamically with gstreamer.
+#
+# this command can be achieve by using the node.js script :
+# node setstate.js <start|stop>
+
+

@@ -4,7 +4,7 @@
 # author : ydegoyon@gmail.com
 
 # the script takes commands from http ( by default on port 9999 )
-# at first it starts with a black screen of 320x240 
+# at first it starts with a snow screen of 320x240 ( no emission )
 # then you can manipulate the video composition 
 # with the following commands:
 # 
@@ -28,10 +28,16 @@
 # we actually have to record in a file name with the date
 # not to crush previous recordings
 # the real name of the recording will be :
-# /tmp/output-mm-dd-hh:mm:ss.avi for example
+# /tmp/output-mm-dd-hh:mm:ss.mp4 for example
 
 # starting and stopping the mixer
 # POST /outputs/state params : {state: start|stop}  
+# IMPORTANT NOTE : when you modify parameters of the mixer,
+# all we do is storing them until you restart the pipe,
+# so all your modifications will be visible
+# _only_ when you send a start message to the mixer.
+# this is due to some limitations in which parameters
+# can be modified dynamically with gstreamer.
 
 import sys, os, time, threading, thread
 import pygtk, gtk, gobject
@@ -307,9 +313,9 @@ class Gst4chMixer:
                 pipecmd = ""
 
                 if ( self.recfile != "" ):
-                    pipecmd += "autoaudiosrc ! audioconvert ! audioresample ! audio/x-raw-int,rate=22050,width=16,channels=1 ! adder name=audiomix ! tee name=audmixout ! queue ! pulsesink audmixout. !  queue ! ffenc_aac ! queue ! mux. "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! pulsesink audmixout. !  queue ! ffenc_aac ! queue ! mux. "
                 else:
-                    pipecmd += "autoaudiosrc ! audioconvert ! audioresample ! audio/x-raw-int,rate=22050,width=16,channels=1 ! adder name=audiomix ! queue ! autoaudiosink "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! queue ! autoaudiosink "
 
                 pipecmd += "videomixer name=mix \
                               sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
@@ -334,16 +340,16 @@ class Gst4chMixer:
                        if self.uri[i][:7] == "file://":
                          pipecmd += " filesrc location=\"%s\" ! decodebin2 name=decodebin%d \
                                       decodebin%d. ! queue ! ffmpegcolorspace !  videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
-                                      decodebin%d. ! audioconvert ! audioresample ! audio/x-raw-int,rate=22050,width=16,channels=1 ! audiomix." % ( self.uri[i][7:], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
+                                      decodebin%d. ! audiomix." % ( self.uri[i][7:], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src device=%s ! ffmpegcolorspace ! \
                                       videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][9:], self.width[i], self.height[i], i+1 );
                        if self.uri[i][:7] == "http://":
                          pipecmd += " uridecodebin uri=\"%s\" ! decodebin2 name=decodebin%d \
                                       decodebin%d. ! queue ! ffmpegcolorspace ! videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
-                                      decodebin%d. ! audioconvert ! audioresample ! audio/x-raw-int,rate=22050,width=16,channels=1 ! audiomix." % ( self.uri[i], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
-                    else:
-                       pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
+                                      decodebin%d. ! audiomix." % ( self.uri[i], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
+                    #else:
+                       # pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
 
                 if ( self.recfile != "" ):
                     #the real name uses a date in it
