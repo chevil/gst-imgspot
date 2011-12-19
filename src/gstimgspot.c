@@ -472,7 +472,7 @@ gst_imgspot_chain (GstPad * pad, GstBuffer * buf)
 
   // skip first camera frames
   nbframes++;
-  if ( nbframes < 20 ) return GST_FLOW_OK;
+  if ( nbframes < 30 ) return GST_FLOW_OK;
 
   pthread_mutex_lock(&filter->mutex);
 

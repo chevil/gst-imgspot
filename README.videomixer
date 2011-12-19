@@ -2,7 +2,7 @@
 # author : ydegoyon@gmail.com
 
 # the script takes commands from http ( by default on port 9999 )
-# at first it starts with a snow screen of 320x240 ( no emission )
+# at first it starts with a black screen of 320x240 ( no emission )
 # then you can manipulate the video composition 
 # with the following commands:
 # 
@@ -12,25 +12,25 @@
 # POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
 #
 # this command can be achieve by using the node.js script :
-# node addsource.js 1 file:///Videoz/video.avi
+# node addsource.js <channel> file:///Videoz/video.avi
 
 # removing a video source :
 # POST /inputs/remove params : {channel: n}  
 #
 # this command can be achieve by using the node.js script :
-# node deletesource.js 1
+# node deletesource.js <channel>
 
 # positioning a channel
 # POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
 #
 # this command can be achieve by using the node.js script :
-# node movesource.js 1 <x> <y>
+# node movesource.js <channel> <x> <y>
 
 # resizing a channel
 # POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
 #
 # this command can be achieve by using the node.js script :
-# node resizesource.js 1 <width> <height>
+# node resizesource.js <channel> <width> <height>
 
 # recording the output
 # POST /outputs/record params : {file: '/path/recording.mp4'}  
@@ -54,6 +54,12 @@
 #
 # this command can be achieve by using the node.js script :
 # node setstate.js <start|stop>
+
+# more optional features : detecting images on a channel
+# POST /inputs/detect params : {channel:n, imagedir: /path/slides, minscore: score}  
+#
+# this command can be achieve by using the node.js script :
+# node detectsource.js <channel> </path/to/slides> <minscore>
 
 KNOWN BUGS :
 ============

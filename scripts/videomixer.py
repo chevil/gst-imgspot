@@ -39,6 +39,9 @@
 # this is due to some limitations in which parameters
 # can be modified dynamically with gstreamer.
 
+# more optional features : detecting images on a channel
+# POST /inputs/detect params : {channel:n, imagedir: /path/slides, minscore: score}  
+
 import sys, os, time, threading, thread
 import pygtk, gtk, gobject
 import pygst
@@ -151,6 +154,28 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.end_headers()
 	    mixer.player.set_state(gst.STATE_PAUSED)
 
+        elif self.path == "/inputs/detect":
+          if "channel" not in params or "imagedir" not in params or "minscore" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          else:
+            channel = int( params['channel'][0] )
+            imagedir = params['imagedir'][0]
+            minscore = int( params['minscore'][0] )
+            if channel < 0 or channel > 3 or minscore < 0:
+              self.send_response(400, 'Bad request')
+              self.send_header('Content-type', 'html')
+              self.end_headers()
+              return
+            mixer.imagedir[channel]=imagedir
+            mixer.minscore[channel]=minscore
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+	    mixer.player.set_state(gst.STATE_PAUSED)
+
         elif self.path == "/outputs/record":
           if "file" not in params:
             self.send_response(400, 'Bad request')
@@ -204,6 +229,8 @@ class Gst4chMixer:
                 self.width=[]
                 self.height=[]
                 self.pattern=[]
+                self.imagedir=[]
+                self.minscore=[]
                 self.pattern.append( "snow" )
                 self.pattern.append( "red" )
                 self.pattern.append( "blue" )
@@ -214,6 +241,8 @@ class Gst4chMixer:
                    self.ypos.append( 0 );
                    self.width.append( 320 );
                    self.height.append( 240 );
+                   self.imagedir.append( "" );
+                   self.minscore.append( 0 );
 
                 self.txsize=0
                 self.tysize=0
@@ -342,17 +371,23 @@ class Gst4chMixer:
 
                 for i in range(0, 4):
                     if ( self.uri[i] != "" ):
+
+                       if ( self.imagedir[i] != "" ):
+                         detectstring = "imgspot width=%d height=%d algorithm=surf imgdir=%s minscore=%d output=bus !" % ( self.width[i], self.height[i], self.imagedir[i], self.minscore[i] )
+                       else:
+                         detectstring = ""
+
                        if self.uri[i][:7] == "file://":
                          pipecmd += " filesrc location=\"%s\" ! decodebin name=decodebin%d \
-                                      decodebin%d. ! queue ! ffmpegcolorspace !  videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
-                                      decodebin%d. ! audiomix." % ( self.uri[i][7:], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
+                                      decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
+                                      decodebin%d. ! audiomix." % ( self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                        if self.uri[i][:9] == "device://":
-                         pipecmd += " v4l2src device=%s ! ffmpegcolorspace ! \
-                                      videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][9:], self.width[i], self.height[i], i+1 );
+                         pipecmd += " v4l2src device=%s ! ffmpegcolorspace ! %s ffmpegcolorspace ! \
+                                      videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1 );
                        if self.uri[i][:7] == "http://":
                          pipecmd += " uridecodebin uri=\"%s\" name=decodebin%d \
-                                      decodebin%d. ! queue ! ffmpegcolorspace ! videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
-                                      decodebin%d. ! audiomix." % ( self.uri[i], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
+                                      decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
+                                      decodebin%d. ! audiomix." % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                     #else:
                        # pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
 
