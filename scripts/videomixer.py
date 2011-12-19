@@ -4,7 +4,7 @@
 # author : ydegoyon@gmail.com
 
 # the script takes commands from http ( by default on port 9999 )
-# at first it starts with a snow screen of 320x240 ( no emission )
+# at first it starts with a black screen of 320x240 ( no emission )
 # then you can manipulate the video composition 
 # with the following commands:
 # 
@@ -85,6 +85,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
+	    mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/delete":
           if "channel" not in params:
@@ -104,6 +105,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
+	    mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/move":
           if "channel" not in params or "posx" not in params or "posy" not in params:
@@ -125,6 +127,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
+	    mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/resize":
           if "channel" not in params or "width" not in params or "height" not in params:
@@ -146,6 +149,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
+	    mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/outputs/record":
           if "file" not in params:
@@ -157,6 +161,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
           self.send_response(200, 'OK')
           self.send_header('Content-type', 'html')
           self.end_headers()
+	  mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/outputs/state":
           if "state" not in params:
@@ -331,21 +336,21 @@ class Gst4chMixer:
                 else:
                     pipecmd += "! xvimagesink "
 
-                pipecmd += "videotestsrc pattern=snow name=background \
+                pipecmd += "videotestsrc pattern=black name=background \
                            ! video/x-raw-yuv,width=%d,height=%d \
                            ! mix.sink_0 " % ( self.txsize, self.tysize );
 
                 for i in range(0, 4):
                     if ( self.uri[i] != "" ):
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " filesrc location=\"%s\" ! decodebin2 name=decodebin%d \
+                         pipecmd += " filesrc location=\"%s\" ! decodebin name=decodebin%d \
                                       decodebin%d. ! queue ! ffmpegcolorspace !  videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
                                       decodebin%d. ! audiomix." % ( self.uri[i][7:], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src device=%s ! ffmpegcolorspace ! \
                                       videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i][9:], self.width[i], self.height[i], i+1 );
                        if self.uri[i][:7] == "http://":
-                         pipecmd += " uridecodebin uri=\"%s\" ! decodebin2 name=decodebin%d \
+                         pipecmd += " uridecodebin uri=\"%s\" name=decodebin%d \
                                       decodebin%d. ! queue ! ffmpegcolorspace ! videoscale ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d \
                                       decodebin%d. ! audiomix." % ( self.uri[i], i+1, i+1, self.width[i], self.height[i], i+1, i+1 );
                     #else:
