@@ -347,7 +347,7 @@ class Gst4chMixer:
                 pipecmd = ""
 
                 if ( self.recfile != "" ):
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! pulsesink audmixout. !  queue ! ffenc_aac ! queue ! mux. "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! queue ! mux. "
                 else:
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! queue ! autoaudiosink "
 
@@ -361,7 +361,7 @@ class Gst4chMixer:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
 
                 if ( self.recfile != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. !  queue ! ffenc_mpeg4 ! queue ! mux. "
+                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue ! x264enc ! queue ! mux. "
                 else:
                     pipecmd += "! xvimagesink "
 

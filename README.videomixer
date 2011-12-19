@@ -66,7 +66,3 @@ KNOWN BUGS :
 
 * if the machine is not powerful enough, audio drops or cuts
 (but the audio in the file is still recorded)
-
-* encoding to h264 ( h264enc ) doesn't seem to work on maverick,
-it blocks all the pipe.
-instead we record to mpeg4 ( divx5 ) with ffenc_mpeg4.
