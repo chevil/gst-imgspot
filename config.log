@@ -14,7 +14,7 @@ hostname = chevilio
 uname -m = i686
 uname -r = 2.6.35-31-generic
 uname -s = Linux
-uname -v = #62-Ubuntu SMP Tue Nov 8 14:00:30 UTC 2011
+uname -v = #63-Ubuntu SMP Mon Nov 28 19:23:11 UTC 2011
 
 /usr/bin/uname -p = unknown
 /bin/uname -X     = unknown
@@ -33,6 +33,7 @@ PATH: /usr/sbin
 PATH: /usr/bin
 PATH: /sbin
 PATH: /bin
+PATH: /usr/local/node
 
 
 ## ----------- ##

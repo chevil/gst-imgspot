@@ -1,0 +1,3 @@
+{ global:
+gst_file_src_get_type;
+local: *; };
