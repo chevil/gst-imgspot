@@ -4,13 +4,13 @@ var fs = require('fs');
 
 if ( process.argv.length  < 3 )
 {
-   console.log( "usage : "+process.argv[1]+" percent" );
+   console.log( "usage : "+process.argv[1]+" seconds" );
    process.exit(-1);
 }
-percent=process.argv[2];
+seconds=process.argv[2];
 
 var post_data = querystring.stringify({
-    'percent' : percent
+    'seconds': seconds
 });
 
 // An object of options to indicate where to post to

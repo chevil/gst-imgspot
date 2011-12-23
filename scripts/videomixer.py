@@ -22,20 +22,14 @@
 # showing a (hidden) video source :
 # POST /inputs/show params : {channel: n}  
 
-# loading a new source in a channel :
-# POST /inputs/load params : {channel: n, url: 'file:///path/video.avi'}  
-# POST /inputs/load params : {channel: n, url: 'device:///dev/video0'}  
-# POST /inputs/load params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  }  
-# the new source must be of the same type as the previous one
-
-# seeking to a position in a video :
-# POST /inputs/seek params : {channel: n, percent: nn}  
-
 # positioning a channel
 # POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
 
 # resizing a channel
 # POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
+
+# setting playing position ( global position for video files )
+# POST /seek params : {seconds:nn}  
 
 # recording the output
 # POST /outputs/record params : {file: '/path/recording.mp4'}  
@@ -47,12 +41,12 @@
 
 # starting and stopping the mixer
 # POST /outputs/state params : {state: start|stop}  
-# IMPORTANT NOTE : when you modify parameters of the mixer,
-# all we do is storing them until you restart the pipe,
-# so all your modifications will be visible
-# _only_ when you send a start message to the mixer.
-# this is due to some limitations in which parameters
-# can be modified dynamically with gstreamer.
+# note : when you add or remove a channel from 
+# the composition or activate recording, streaming or slides detection,
+# you need to send a new start message to the mixer
+# so to have a smooth experience,
+# so prepare all your channels before,
+# even the different videos
 
 # more optional features : detecting images on a channel
 # POST /inputs/detect params : {channel:n, imagedir: /path/slides, minscore: score}  
@@ -104,6 +98,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'html')
             self.end_headers()
             #mixer.launch_pipe()
+	    mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/delete":
           if "channel" not in params:
@@ -123,6 +118,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'html')
             self.end_headers()
             #mixer.launch_pipe()
+	    mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/hide":
           if "channel" not in params:
@@ -192,72 +188,6 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'html')
             self.end_headers()
 
-        elif self.path == "/inputs/load":
-          if "url" not in params or "channel" not in params:
-            self.send_response(400, 'Bad request')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
-            return
-          else:
-            newsource = params['url'][0]
-            channel = int( params['channel'][0] )
-
-            # wrong channel number
-            if ( channel < 0 or channel >= nbchannels ):
-               self.send_response(400, 'Bad request')
-               self.send_header('Content-type', 'html')
-               self.end_headers()
-               return
-            
-            # cannot load a camera that is already in use
-            if newsource[:9] == "device://":
-                for i in range(0, nbchannels):
-                  if newsource == mixer.uri[i]:
-                    #cannot add a camera two times, would crash
-                    self.send_response(400, 'Bad request')
-                    self.send_header('Content-type', 'html')
-                    self.end_headers()
-                    return
-
-            # check source type
-            if mixer.uri[channel][:7] != newsource[:7]  or ( mixer.uri[channel][:9] == "device://" and newsource[:9] != "device://" ) :
-               self.send_response(400, 'Bad request')
-               self.send_header('Content-type', 'html')
-               self.end_headers()
-               return
-
-            if newsource[:7] == "file://":
-               wsource = "kfilesrc%d" % ( channel+1 ) 
-               kfilesrc = mixer.player.get_by_name(wsource)
-               kfilesrc.set_property( "location", newsource[7:] );
-
-            if newsource[:9] == "device://":
-               wsource = "v4l2src%d" % ( channel+1 ) 
-               v4l2src = mixer.player.get_by_name(wsource)
-	       mixer.player.set_state(gst.STATE_PAUSED)
-               v4l2src.set_property( "device", newsource[9:] )
-	       mixer.player.set_state(gst.STATE_PLAYING)
-
-            mixer.uri[channel]=newsource
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
-
-        elif self.path == "/seek":
-          if "seconds" not in params:
-            self.send_response(400, 'Bad request')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
-            return
-          else:
-            percent = int( params['percent'][0] )
-	    mixer.player.set_state(gst.STATE_PAUSED)
-	    mixer.player.seek_simple(gst.FORMAT_PERCENT, gst.SEEK_FLAG_ACCURATE, percent)
-	    mixer.player.set_state(gst.STATE_PLAYING)
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
-
         elif self.path == "/inputs/resize":
           if "channel" not in params or "width" not in params or "height" not in params:
             self.send_response(400, 'Bad request')
@@ -280,6 +210,57 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.end_headers()
             mixer.position_channels()
 
+        elif self.path == "/seek":
+          if "seconds" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          else:
+            seconds = int( params['seconds'][0] )
+            if seconds < 0:
+              self.send_response(400, 'Bad request')
+              self.send_header('Content-type', 'html')
+              self.end_headers()
+              return
+
+            # request is ok
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+
+            event = gst.event_new_seek(1.0, gst.FORMAT_TIME,
+                    gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
+                    gst.SEEK_TYPE_SET, seconds,
+                    gst.SEEK_TYPE_NONE, 0)
+
+            res = mixer.player.send_event(event)
+            if res:
+               print "setting new stream time to 0"
+               mixer.player.set_new_stream_time(0L)
+            else:
+               print "seek to %r failed" % location
+
+        elif self.path == "/inputs/load":
+          if "channel" not in params or "url" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          else:
+            channel = int( params['channel'][0] )
+            url = params['url'][0]
+            if channel < 0 or channel >= nbchannels or mixer.uri[channel][:7] != "file://":
+              self.send_response(400, 'Bad request')
+              self.send_header('Content-type', 'html')
+              self.end_headers()
+              return
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            mixer.uri[channel]=url
+            mixer.launch_pipe()
+
         elif self.path == "/inputs/detect":
           if "channel" not in params or "imagedir" not in params or "minscore" not in params:
             self.send_response(400, 'Bad request')
@@ -300,7 +281,8 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
-            mixer.launch_pipe()
+            #mixer.launch_pipe()
+	    mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/outputs/record":
           if "file" not in params:
@@ -312,6 +294,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
           self.send_response(200, 'OK')
           self.send_header('Content-type', 'html')
           self.end_headers()
+          #mixer.launch_pipe()
 	  mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/outputs/state":
@@ -372,11 +355,6 @@ class Gst4chMixer:
 
                 self.txsize=640
                 self.tysize=480
-                #for i in range(0, nbchannels):
-                #   if ( self.xpos[i]+self.width[i] ) > self.txsize :
-                #      self.txsize=self.xpos[i]+self.width[i]
-                #   if ( self.ypos[i]+self.height[i] ) > self.tysize :
-                #      self.tysize=self.ypos[i]+self.height[i]
 
                 self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
                 self.window.set_title("videomixer.py")
@@ -401,10 +379,10 @@ class Gst4chMixer:
 
 	def on_message(self, bus, message):
 		t = message.type
-		if t == gst.MESSAGE_EOS:
-			self.player.set_state(gst.STATE_NULL)
+		# if t == gst.MESSAGE_EOS:
+		# 	self.player.set_state(gst.STATE_NULL)
 
-                elif t == gst.MESSAGE_ELEMENT:
+                if t == gst.MESSAGE_ELEMENT:
                    st = message.structure
                    if st.get_name() == "imgspot":
                       self.curtime = time.time()
@@ -431,16 +409,8 @@ class Gst4chMixer:
 
 	def position_channels(self):
 
-		self.player.set_state(gst.STATE_PLAYING)
+		self.player.set_state(gst.STATE_PAUSED)
                 mixer = self.player.get_by_name( "mix" )
-
-                #self.txsize=0
-                #self.tysize=0
-                #for i in range(0, nbchannels):
-                #   if ( self.xpos[i]+self.width[i] ) > self.txsize :
-                #      self.txsize=self.xpos[i]+self.width[i]
-                #   if ( self.ypos[i]+self.height[i] ) > self.tysize :
-                #      self.tysize=self.ypos[i]+self.height[i]
 
                 pads=list(mixer.sink_pads())
                 for j in range(0, len(pads)):
@@ -448,13 +418,11 @@ class Gst4chMixer:
                       if self.uri[i] !="":
                         if pads[j].props.zorder == i+1:
                            videocap = gst.Caps("video/x-raw-yuv,width=%d,height=%d" % ( self.width[i], self.height[i] ))
-                           vcale = self.player.get_by_name( "videoscale%d" % ( i+1 ) )
-                           vpads=list(vcale.src_pads())
+                           vscale = self.player.get_by_name( "videoscale%d" % ( i+1 ) )
+                           vpads=list(vscale.src_pads())
                            vpads[0].unlink( pads[j] )
                            vpads[0].set_caps(videocap)
                            vpads[0].link( pads[j] );
-                           vpads=list(vcale.sink_pads())
-                           vpads[0].set_caps(videocap)
 
                          # print "setting pad %d to %d %d" % ( j, self.xpos[i], self.ypos[i] )
                    # resize the whole screen
@@ -476,14 +444,6 @@ class Gst4chMixer:
 		self.player.set_state(gst.STATE_PLAYING)
 
 	def launch_pipe(self):
-                # calculating global size
-                self.txsize=0
-                self.tysize=0
-                for i in range(0, nbchannels):
-                   if ( self.xpos[i]+self.width[i] ) > self.txsize :
-                      self.txsize=self.xpos[i]+self.width[i]
-                   if ( self.ypos[i]+self.height[i] ) > self.tysize :
-                      self.tysize=self.ypos[i]+self.height[i]
 
                 pipecmd = ""
 
@@ -501,9 +461,9 @@ class Gst4chMixer:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
 
                 if ( self.recfile != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue ! x264enc ! queue ! mux. "
+                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue ! ffenc_mpeg4 ! queue ! mux. "
                 else:
-                    pipecmd += "! xvimagesink "
+                    pipecmd += "! autovideosink "
 
                 pipecmd += "videotestsrc pattern=black name=background ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_0 " % ( self.txsize, self.tysize );
 
@@ -516,13 +476,13 @@ class Gst4chMixer:
                          detectstring = ""
 
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
+                         pipecmd += " filesrc name=filesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src name=v4l2src%d device=%s ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace !  video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
                        if self.uri[i][:7] == "http://":
                          pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
                     #else:
-                       # pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
+                       # pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d. " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
 
                 if ( self.recfile != "" ):
                     #the real name uses a date in it
