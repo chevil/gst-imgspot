@@ -1,10 +1,13 @@
 #!/usr/bin/python
 
-# this script is a four channel video mixer 
+# this script is a nth channel video mixer 
+# you set the number of channel by passing it as argument
+# you also pass as arguments the width and height of the mix
+# usage : python videomixer.py 3 640 480
 # author : ydegoyon@gmail.com
 
 # the script takes commands from http ( by default on port 9999 )
-# at first it starts with a black screen of 320x240 ( no emission )
+# at first it starts with a black screen of WxH ( no emission )
 # then you can manipulate the video composition 
 # with the following commands:
 # 
@@ -12,24 +15,31 @@
 # POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}  
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}  
 # POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
+# after adding a channel, you have to restart the mixer with "/outputs/state start"
 
 # removing a video source :
 # POST /inputs/remove params : {channel: n}  
+# after adding a channel, you have to restart the mixer with "/outputs/state start"
 
 # hiding a video source :
 # POST /inputs/hide params : {channel: n}  
+# you don't need to restart the mixer
 
 # showing a (hidden) video source :
 # POST /inputs/show params : {channel: n}  
+# you don't need to restart the mixer
 
 # positioning a channel
 # POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
+# you don't need to restart the mixer
 
 # resizing a channel
 # POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
+# you don't need to restart the mixer
 
 # setting playing position ( global position for video files )
 # POST /seek params : {seconds:nn}  
+# you don't need to restart the mixer
 
 # recording the output
 # POST /outputs/record params : {file: '/path/recording.mp4'}  
@@ -38,6 +48,14 @@
 # not to crush previous recordings
 # the real name of the recording will be :
 # /tmp/output-mm-dd-hh:mm:ss.mp4 for example
+# after setting the record file, you have to restart the mixer with "/outputs/state start"
+
+# recording the output
+# POST /outputs/stream params : {hostname: 'xxx.xxx.xxx.xxx', audioport: nnnn, videoport: nnnn}  
+# after setting the streaming, you have to restart the mixer with "/outputs/state start"
+# note : streaming and recording are exclusive
+# because if you stream you can record the stream
+# on another machine or on the server
 
 # starting and stopping the mixer
 # POST /outputs/state params : {state: start|stop}  
@@ -48,8 +66,9 @@
 # so prepare all your channels before,
 # even the different videos
 
-# more optional features : detecting images on a channel
+# detecting images/slides on a channel
 # POST /inputs/detect params : {channel:n, imagedir: /path/slides, minscore: score}  
+# after setting detection, you have to restart the mixer with "/outputs/state start"
 
 import sys, os, time, threading, thread
 import pygtk, gtk, gobject
@@ -297,6 +316,21 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
           #mixer.launch_pipe()
 	  mixer.player.set_state(gst.STATE_PAUSED)
 
+        elif self.path == "/outputs/stream":
+          if "hostname" not in params or "audioport" not in params or "videoport" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          mixer.hostname=params['hostname'][0]
+          mixer.audioport=int(params['audioport'][0])
+          mixer.videoport=int(params['videoport'][0])
+          self.send_response(200, 'OK')
+          self.send_header('Content-type', 'html')
+          self.end_headers()
+          #mixer.launch_pipe()
+	  mixer.player.set_state(gst.STATE_PAUSED)
+
         elif self.path == "/outputs/state":
           if "state" not in params:
             self.send_response(400, 'Bad request')
@@ -332,6 +366,7 @@ class Gst4chMixer:
 	def __init__(self):
 
                 self.recfile=""
+                self.hostname=""
                 self.uri=[]
                 self.xpos=[]
                 self.ypos=[]
@@ -353,8 +388,8 @@ class Gst4chMixer:
                    self.imagedir.append( "" );
                    self.minscore.append( 0 );
 
-                self.txsize=640
-                self.tysize=480
+                self.txsize=gwidth
+                self.tysize=gheight
 
                 self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
                 self.window.set_title("videomixer.py")
@@ -379,10 +414,21 @@ class Gst4chMixer:
 
 	def on_message(self, bus, message):
 		t = message.type
-		# if t == gst.MESSAGE_EOS:
-		# 	self.player.set_state(gst.STATE_NULL)
+		if t == gst.MESSAGE_EOS:
+                  # loop the stream
+                  event = gst.event_new_seek(1.0, gst.FORMAT_TIME,
+                    gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
+                    gst.SEEK_TYPE_SET, 0,
+                    gst.SEEK_TYPE_NONE, 0)
 
-                if t == gst.MESSAGE_ELEMENT:
+                  res = mixer.player.send_event(event)
+                  if res:
+                    print "setting new stream time to 0"
+                    mixer.player.set_new_stream_time(0L)
+                  else:
+                    print "seek to %r failed" % location
+
+                elif t == gst.MESSAGE_ELEMENT:
                    st = message.structure
                    if st.get_name() == "imgspot":
                       self.curtime = time.time()
@@ -447,7 +493,9 @@ class Gst4chMixer:
 
                 pipecmd = ""
 
-                if ( self.recfile != "" ):
+                if ( self.hostname != "" ):
+                    pipecmd += "gstrtpbin name=rtpbin autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
+                elif ( self.recfile != "" ):
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! queue ! mux. "
                 else:
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! queue ! autoaudiosink "
@@ -460,8 +508,10 @@ class Gst4chMixer:
                     else:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
 
-                if ( self.recfile != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue ! ffenc_mpeg4 ! queue ! mux. "
+                if ( self.hostname != "" ):
+                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
+                elif ( self.recfile != "" ):
+                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! ffenc_mpeg4 ! queue ! mux. "
                 else:
                     pipecmd += "! autovideosink "
 
@@ -484,7 +534,10 @@ class Gst4chMixer:
                     #else:
                        # pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d. " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
 
-                if ( self.recfile != "" ):
+                if ( self.hostname != "" ):
+                    pipecmd += " rtpbin.send_rtp_src_0 ! udpsink host=%s port=%d ts-offset=0 name=vrtpsink rtpbin.send_rtcp_src_0 ! udpsink host=%s port=%d sync=false async=false name=vrtcpsink udpsrc port=%d name=vrtpsrc ! rtpbin.recv_rtcp_sink_0 " % ( self.hostname, self.videoport, self.hostname, self.videoport+1, self.videoport+5 )
+                    pipecmd += " rtpbin.send_rtp_src_1 ! udpsink host=%s port=%d ts-offset=0 name=artpsink rtpbin.send_rtcp_src_1 ! udpsink host=%s port=%d sync=false async=false name=artcpsink udpsrc port=%d name=artpsrc ! rtpbin.recv_rtcp_sink_1 " % ( self.hostname, self.audioport, self.hostname, self.audioport+1, self.audioport+5 )
+                elif ( self.recfile != "" ):
                     #the real name uses a date in it
                     #not to override previous recordings
                     extension = self.recfile[-3:]
@@ -514,15 +567,19 @@ def main(args):
     global httpd
     global httpdt
     global nbchannels
+    global gwidth
+    global gheight
 
     def usage():
-        sys.stderr.write("usage: %s <nbchannels>\n" % args[0])
+        sys.stderr.write("usage: %s <nbchannels> <width> <height>\n" % args[0])
         sys.exit(1)
 
-    if len(args) < 2:
+    if len(args) < 4:
         usage()
 
     nbchannels = int(args[1])
+    gwidth = int(args[2])
+    gheight = int(args[3])
 
     # build the window
     mixer = Gst4chMixer()
