@@ -15,6 +15,7 @@
 # POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}  
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}  
 # POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
+# POST /inputs/add params : {channel: n, url: 'rtsp:///wowza.com:1935/app/stream.sdp'}  
 # after adding a channel, you have to restart the mixer with "/outputs/state start"
 
 # removing a video source :
@@ -527,10 +528,16 @@ class Gst4chMixer:
 
                        if self.uri[i][:7] == "file://":
                          pipecmd += " filesrc name=filesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
+
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src name=v4l2src%d device=%s ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace !  video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
+
                        if self.uri[i][:7] == "http://":
                          pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
+
+                       if self.uri[i][:7] == "rtsp://":
+                         pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
+
                     #else:
                        # pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d. " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
 
