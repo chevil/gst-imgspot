@@ -65,6 +65,17 @@ if test "x$HAVE_OPENCV" = "xno"; then
   AC_MSG_ERROR(OpenCV libraries could not be found)
 fi
 
+PKG_CHECK_MODULES(ORC,
+		  orc-0.4,
+		  HAVE_ORC=yes, HAVE_ORC=no)
+
+if test "x$HAVE_ORC" = "xno"; then
+  AC_MSG_ERROR(you need to install ORC development files.)
+fi
+
+AC_SUBST(ORC_CFLAGS)
+AC_SUBST(ORC_LIBS)
+
 dnl If we need them, we can also use the gstreamer-plugins-base libraries
 PKG_CHECK_MODULES(GSTPB_BASE,
                   gstreamer-plugins-base-$GST_MAJORMINOR >= $GSTPB_REQUIRED,

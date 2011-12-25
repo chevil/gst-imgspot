@@ -68,20 +68,28 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(plugindir)"
 LTLIBRARIES = $(plugin_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-libgstimgspot_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-libgstkfilesrc_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_libgstimgspot_la_OBJECTS = libgstimgspot_la-gstimgspot.lo
-am_libgstkfilesrc_la_OBJECTS = libgstkfilesrc_la-gstkfilesrc.lo
 libgstimgspot_la_OBJECTS = $(am_libgstimgspot_la_OBJECTS)
-libgstkfilesrc_la_OBJECTS = $(am_libgstkfilesrc_la_OBJECTS)
 libgstimgspot_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libgstimgspot_la_CFLAGS) \
 	$(CFLAGS) $(libgstimgspot_la_LDFLAGS) $(LDFLAGS) -o $@
+am_libgstkfilesrc_la_OBJECTS = libgstkfilesrc_la-gstkfilesrc.lo
+libgstkfilesrc_la_OBJECTS = $(am_libgstkfilesrc_la_OBJECTS)
 libgstkfilesrc_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libgstkfilesrc_la_CFLAGS) \
-	$(CFLAGS) $(libgstkfilesrc_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(libgstkfilesrc_la_CFLAGS) $(CFLAGS) \
+	$(libgstkfilesrc_la_LDFLAGS) $(LDFLAGS) -o $@
+am_libgstvideoscaledmixer_la_OBJECTS =  \
+	libgstvideoscaledmixer_la-gstvideoscaledmixer.lo \
+	libgstvideoscaledmixer_la-blend.lo \
+	libgstvideoscaledmixer_la-blendorc.lo \
+	libgstvideoscaledmixer_la-gstcollectpads2.lo
+libgstvideoscaledmixer_la_OBJECTS =  \
+	$(am_libgstvideoscaledmixer_la_OBJECTS)
+libgstvideoscaledmixer_la_LINK = $(LIBTOOL) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) \
+	$(libgstvideoscaledmixer_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -95,8 +103,11 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libgstimgspot_la_SOURCES libgstkfilesrc_la_SOURCES)
-DIST_SOURCES = $(libgstimgspot_la_SOURCES libgstkfilesrc_la_SOURCES)
+SOURCES = $(libgstimgspot_la_SOURCES) $(libgstkfilesrc_la_SOURCES) \
+	$(libgstvideoscaledmixer_la_SOURCES)
+DIST_SOURCES = $(libgstimgspot_la_SOURCES) \
+	$(libgstkfilesrc_la_SOURCES) \
+	$(libgstvideoscaledmixer_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -120,6 +131,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
@@ -154,6 +166,7 @@ LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -161,6 +174,8 @@ OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
 OPENCV_CFLAGS = @OPENCV_CFLAGS@
 OPENCV_LIBS = @OPENCV_LIBS@
+ORC_CFLAGS = @ORC_CFLAGS@
+ORC_LIBS = @ORC_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -184,6 +199,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -217,7 +233,6 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
-lt_ECHO = @lt_ECHO@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
@@ -234,20 +249,24 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la
+plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la libgstvideoscaledmixer.la
 
 # sources used to compile this plug-in
 libgstimgspot_la_SOURCES = gstimgspot.c
 libgstkfilesrc_la_SOURCES = gstkfilesrc.c
-
-# flags used to compile this facedetect
-# add other _CFLAGS and _LIBS as needed
-libgstimgspot_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) -I.
-libgstimgspot_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS)
+libgstvideoscaledmixer_la_SOURCES = gstvideoscaledmixer.c blend.c blendorc.c gstcollectpads2.c
+libgstimgspot_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
+libgstimgspot_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstimgspot_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
-libgstkfilesrc_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) -I.
-libgstkfilesrc_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS)
+libgstimgspot_la_DEPENDENCIES = libgstimgspot.la
+libgstkfilesrc_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
+libgstkfilesrc_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstkfilesrc_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+libgstkfilesrc_la_DEPENDENCIES = libgstkfilesrc.la
+libgstvideoscaledmixer_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
+libgstvideoscaledmixer_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
+libgstvideoscaledmixer_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+libgstvideoscaledmixer_la_DEPENDENCIES = libgstvideoscaledmixer.la
 all: all-am
 
 .SUFFIXES:
@@ -317,6 +336,8 @@ libgstimgspot.la: $(libgstimgspot_la_OBJECTS) $(libgstimgspot_la_DEPENDENCIES)
 	$(libgstimgspot_la_LINK) -rpath $(plugindir) $(libgstimgspot_la_OBJECTS) $(libgstimgspot_la_LIBADD) $(LIBS)
 libgstkfilesrc.la: $(libgstkfilesrc_la_OBJECTS) $(libgstkfilesrc_la_DEPENDENCIES) 
 	$(libgstkfilesrc_la_LINK) -rpath $(plugindir) $(libgstkfilesrc_la_OBJECTS) $(libgstkfilesrc_la_LIBADD) $(LIBS)
+libgstvideoscaledmixer.la: $(libgstvideoscaledmixer_la_OBJECTS) $(libgstvideoscaledmixer_la_DEPENDENCIES) 
+	$(libgstvideoscaledmixer_la_LINK) -rpath $(plugindir) $(libgstvideoscaledmixer_la_OBJECTS) $(libgstvideoscaledmixer_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -324,7 +345,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstimgspot_la-gstimgspot.Plo@am__quote@ @am__quote@./$(DEPDIR)/libgstimgspot_la-gstkfilesrc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstimgspot_la-gstimgspot.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstkfilesrc_la-gstkfilesrc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstvideoscaledmixer_la-blend.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstvideoscaledmixer_la-blendorc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstvideoscaledmixer_la-gstcollectpads2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -360,6 +386,34 @@ libgstkfilesrc_la-gstkfilesrc.lo: gstkfilesrc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gstkfilesrc.c' object='libgstkfilesrc_la-gstkfilesrc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstkfilesrc_la_CFLAGS) $(CFLAGS) -c -o libgstkfilesrc_la-gstkfilesrc.lo `test -f 'gstkfilesrc.c' || echo '$(srcdir)/'`gstkfilesrc.c
+
+libgstvideoscaledmixer_la-gstvideoscaledmixer.lo: gstvideoscaledmixer.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -MT libgstvideoscaledmixer_la-gstvideoscaledmixer.lo -MD -MP -MF $(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Tpo -c -o libgstvideoscaledmixer_la-gstvideoscaledmixer.lo `test -f 'gstvideoscaledmixer.c' || echo '$(srcdir)/'`gstvideoscaledmixer.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Tpo $(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gstvideoscaledmixer.c' object='libgstvideoscaledmixer_la-gstvideoscaledmixer.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -c -o libgstvideoscaledmixer_la-gstvideoscaledmixer.lo `test -f 'gstvideoscaledmixer.c' || echo '$(srcdir)/'`gstvideoscaledmixer.c
+
+libgstvideoscaledmixer_la-blend.lo: blend.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -MT libgstvideoscaledmixer_la-blend.lo -MD -MP -MF $(DEPDIR)/libgstvideoscaledmixer_la-blend.Tpo -c -o libgstvideoscaledmixer_la-blend.lo `test -f 'blend.c' || echo '$(srcdir)/'`blend.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libgstvideoscaledmixer_la-blend.Tpo $(DEPDIR)/libgstvideoscaledmixer_la-blend.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='blend.c' object='libgstvideoscaledmixer_la-blend.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -c -o libgstvideoscaledmixer_la-blend.lo `test -f 'blend.c' || echo '$(srcdir)/'`blend.c
+
+libgstvideoscaledmixer_la-blendorc.lo: blendorc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -MT libgstvideoscaledmixer_la-blendorc.lo -MD -MP -MF $(DEPDIR)/libgstvideoscaledmixer_la-blendorc.Tpo -c -o libgstvideoscaledmixer_la-blendorc.lo `test -f 'blendorc.c' || echo '$(srcdir)/'`blendorc.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libgstvideoscaledmixer_la-blendorc.Tpo $(DEPDIR)/libgstvideoscaledmixer_la-blendorc.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='blendorc.c' object='libgstvideoscaledmixer_la-blendorc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -c -o libgstvideoscaledmixer_la-blendorc.lo `test -f 'blendorc.c' || echo '$(srcdir)/'`blendorc.c
+
+libgstvideoscaledmixer_la-gstcollectpads2.lo: gstcollectpads2.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -MT libgstvideoscaledmixer_la-gstcollectpads2.lo -MD -MP -MF $(DEPDIR)/libgstvideoscaledmixer_la-gstcollectpads2.Tpo -c -o libgstvideoscaledmixer_la-gstcollectpads2.lo `test -f 'gstcollectpads2.c' || echo '$(srcdir)/'`gstcollectpads2.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libgstvideoscaledmixer_la-gstcollectpads2.Tpo $(DEPDIR)/libgstvideoscaledmixer_la-gstcollectpads2.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gstcollectpads2.c' object='libgstvideoscaledmixer_la-gstcollectpads2.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -c -o libgstvideoscaledmixer_la-gstcollectpads2.lo `test -f 'gstcollectpads2.c' || echo '$(srcdir)/'`gstcollectpads2.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

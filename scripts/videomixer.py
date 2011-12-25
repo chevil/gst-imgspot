@@ -498,11 +498,11 @@ class Gst4chMixer:
                     pipecmd += "gstrtpbin name=rtpbin "
 
                 if self.hostname != "" and nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue leaky=1 ! autoaudiosink audmixout. ! queue leaky=1 ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
                 elif self.recfile != "" and nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! queue ! mux. "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue leaky=1 ! autoaudiosink audmixout. ! queue leaky=1 ! ffenc_aac ! queue leaky=1 ! mux. "
                 elif nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! queue ! autoaudiosink "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! queue leaky=1 ! autoaudiosink "
 
                 pipecmd += "videomixer2 name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
 
@@ -513,9 +513,9 @@ class Gst4chMixer:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
 
                 if ( self.hostname != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
+                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue leaky=1 ! rtph264pay ! rtpbin.send_rtp_sink_0 "
                 elif ( self.recfile != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! ffenc_mpeg4 ! queue ! mux. "
+                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! ffenc_mpeg4 ! queue leaky=1 ! mux. "
                 else:
                     pipecmd += "! autovideosink "
 
@@ -530,20 +530,20 @@ class Gst4chMixer:
                          detectstring = ""
 
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " filesrc name=filesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " filesrc name=filesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
 
                        if self.uri[i][:9] == "device://":
-                         pipecmd += " v4l2src name=v4l2src%d device=%s ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace !  video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " v4l2src name=v4l2src%d device=%s ! ffmpegcolorspace ! %s ffmpegcolorspace !  video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
 
                        if self.uri[i][:7] == "http://":
-                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audiomix. " % ( i+1 ) 
 
                        if self.uri[i][:7] == "rtsp://":
-                         pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
 
