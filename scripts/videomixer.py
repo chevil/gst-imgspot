@@ -504,7 +504,7 @@ class Gst4chMixer:
                 elif nosound==False:
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! queue leaky=1 ! autoaudiosink "
 
-                pipecmd += "videomixer2 name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
+                pipecmd += "videoscaledmixer name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
 
                 for i in range(0, nbchannels):
                     if self.uri[i] != "":

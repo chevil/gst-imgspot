@@ -68,17 +68,26 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(plugindir)"
 LTLIBRARIES = $(plugin_LTLIBRARIES)
 am__DEPENDENCIES_1 =
+libgstimgspot_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_libgstimgspot_la_OBJECTS = libgstimgspot_la-gstimgspot.lo
 libgstimgspot_la_OBJECTS = $(am_libgstimgspot_la_OBJECTS)
 libgstimgspot_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libgstimgspot_la_CFLAGS) \
 	$(CFLAGS) $(libgstimgspot_la_LDFLAGS) $(LDFLAGS) -o $@
+libgstkfilesrc_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_libgstkfilesrc_la_OBJECTS = libgstkfilesrc_la-gstkfilesrc.lo
 libgstkfilesrc_la_OBJECTS = $(am_libgstkfilesrc_la_OBJECTS)
 libgstkfilesrc_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libgstkfilesrc_la_CFLAGS) $(CFLAGS) \
 	$(libgstkfilesrc_la_LDFLAGS) $(LDFLAGS) -o $@
+libgstvideoscaledmixer_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_libgstvideoscaledmixer_la_OBJECTS =  \
 	libgstvideoscaledmixer_la-gstvideoscaledmixer.lo \
 	libgstvideoscaledmixer_la-blend.lo \
@@ -148,7 +157,7 @@ GSTPB_BASE_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -
 GST_BASE_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gstreamer-0.10 -I/usr/include/libxml2  
 GST_BASE_LIBS = -pthread -lgstbase-0.10 -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0  
 GST_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gstreamer-0.10 -I/usr/include/libxml2  
-GST_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0  
+GST_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0   -lgstvideo-0.10 -lgstcontroller-0.10
 GST_MAJORMINOR = 0.10
 GST_PLUGIN_LDFLAGS = -module -avoid-version -export-symbols-regex _*\(gst_\|Gst\|GST_\).*
 HAVE_PKGCONFIG = yes
@@ -238,7 +247,7 @@ mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
 plugindir = $(libdir)/gstreamer-0.10
-prefix = /usr/local
+prefix = /usr
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -258,15 +267,12 @@ libgstvideoscaledmixer_la_SOURCES = gstvideoscaledmixer.c blend.c blendorc.c gst
 libgstimgspot_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstimgspot_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstimgspot_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
-libgstimgspot_la_DEPENDENCIES = libgstimgspot.la
 libgstkfilesrc_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstkfilesrc_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstkfilesrc_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
-libgstkfilesrc_la_DEPENDENCIES = libgstkfilesrc.la
 libgstvideoscaledmixer_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstvideoscaledmixer_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstvideoscaledmixer_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
-libgstvideoscaledmixer_la_DEPENDENCIES = libgstvideoscaledmixer.la
 all: all-am
 
 .SUFFIXES:

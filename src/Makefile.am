@@ -9,14 +9,11 @@ libgstvideoscaledmixer_la_SOURCES = gstvideoscaledmixer.c blend.c blendorc.c gst
 libgstimgspot_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstimgspot_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstimgspot_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
-libgstimgspot_la_DEPENDENCIES = libgstimgspot.la
 
 libgstkfilesrc_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstkfilesrc_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstkfilesrc_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
-libgstkfilesrc_la_DEPENDENCIES = libgstkfilesrc.la
 
 libgstvideoscaledmixer_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstvideoscaledmixer_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstvideoscaledmixer_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
-libgstvideoscaledmixer_la_DEPENDENCIES = libgstvideoscaledmixer.la
