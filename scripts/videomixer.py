@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
+# usage : python videomixer.py 3 640 480 <nosound>
 # this script is a nth channel video mixer 
 # you set the number of channel by passing it as argument
 # you also pass as arguments the width and height of the mix
-# usage : python videomixer.py 3 640 480
 # author : ydegoyon@gmail.com
 
 # the script takes commands from http ( by default on port 9999 )
@@ -20,7 +20,7 @@
 
 # removing a video source :
 # POST /inputs/remove params : {channel: n}  
-# after adding a channel, you have to restart the mixer with "/outputs/state start"
+# after removing a channel, you have to restart the mixer with "/outputs/state start"
 
 # hiding a video source :
 # POST /inputs/hide params : {channel: n}  
@@ -44,15 +44,17 @@
 
 # recording the output
 # POST /outputs/record params : {file: '/path/recording.mp4'}  
-# note : as the pipe is restarted when you change some parameters,
+# note : as the pipe is restarted when you change the number of channels,
 # we actually have to record in a file name with the date
 # not to crush previous recordings
 # the real name of the recording will be :
 # /tmp/output-mm-dd-hh:mm:ss.mp4 for example
+# if you asked for /tmp/output.mp4
 # after setting the record file, you have to restart the mixer with "/outputs/state start"
 
-# recording the output
+# streaming the output
 # POST /outputs/stream params : {hostname: 'xxx.xxx.xxx.xxx', audioport: nnnn, videoport: nnnn}  
+# this activate a rtp streaming towards a wowza server for example
 # after setting the streaming, you have to restart the mixer with "/outputs/state start"
 # note : streaming and recording are exclusive
 # because if you stream you can record the stream
@@ -64,8 +66,9 @@
 # the composition or activate recording, streaming or slides detection,
 # you need to send a new start message to the mixer
 # so to have a smooth experience,
-# so prepare all your channels before,
-# even the different videos
+# prepare all your channels before,
+# even the different videos ans cameras 
+# you want to use in a session
 
 # detecting images/slides on a channel
 # POST /inputs/detect params : {channel:n, imagedir: /path/slides, minscore: score}  
@@ -259,7 +262,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                print "setting new stream time to 0"
                mixer.player.set_new_stream_time(0L)
             else:
-               print "seek to %r failed" % location
+               print "seek to 0 failed"
 
         elif self.path == "/inputs/load":
           if "channel" not in params or "url" not in params:
@@ -416,18 +419,19 @@ class Gst4chMixer:
 	def on_message(self, bus, message):
 		t = message.type
 		if t == gst.MESSAGE_EOS:
+                  print "end of stream"
                   # loop the stream
-                  event = gst.event_new_seek(1.0, gst.FORMAT_TIME,
-                    gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
-                    gst.SEEK_TYPE_SET, 0,
-                    gst.SEEK_TYPE_NONE, 0)
+                  #event = gst.event_new_seek(1.0, gst.FORMAT_TIME,
+                  #  gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
+                  #  gst.SEEK_TYPE_SET, 0,
+                  #  gst.SEEK_TYPE_NONE, 0)
 
-                  res = mixer.player.send_event(event)
-                  if res:
-                    print "setting new stream time to 0"
-                    mixer.player.set_new_stream_time(0L)
-                  else:
-                    print "seek to %r failed" % location
+                  #res = mixer.player.send_event(event)
+                  #if res:
+                  #  print "setting new stream time to 0"
+                  #  mixer.player.set_new_stream_time(0L)
+                  #else:
+                  #  print "seek to %r failed" % location
 
                 elif t == gst.MESSAGE_ELEMENT:
                    st = message.structure
@@ -495,13 +499,16 @@ class Gst4chMixer:
                 pipecmd = ""
 
                 if ( self.hostname != "" ):
-                    pipecmd += "gstrtpbin name=rtpbin autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
-                elif ( self.recfile != "" ):
+                    pipecmd += "gstrtpbin name=rtpbin "
+
+                if self.hostname != "" and nosound==False:
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
+                elif self.recfile != "" and nosound==False:
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! queue ! mux. "
-                else:
+                elif nosound==False:
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! queue ! autoaudiosink "
 
-                pipecmd += "videomixer name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
+                pipecmd += "videomixer2 name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
 
                 for i in range(0, nbchannels):
                     if self.uri[i] != "":
@@ -516,7 +523,7 @@ class Gst4chMixer:
                 else:
                     pipecmd += "! autovideosink "
 
-                pipecmd += "videotestsrc pattern=black name=background ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_0 " % ( self.txsize, self.tysize );
+                pipecmd += "videotestsrc pattern=black name=background ! video/x-raw-yuv,width=%d,height=%d,format=(fourcc)I420,framerate=(fraction)15/1 ! mix.sink_0 " % ( self.txsize, self.tysize );
 
                 for i in range(0, nbchannels):
                     if ( self.uri[i] != "" ):
@@ -527,23 +534,28 @@ class Gst4chMixer:
                          detectstring = ""
 
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " filesrc name=filesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
+                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         if nosound==False: 
+                            pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
 
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src name=v4l2src%d device=%s ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace !  video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
 
                        if self.uri[i][:7] == "http://":
-                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
+                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         if nosound==False: 
+                            pipecmd += " decodebin%d. ! audiomix. " % ( i+1 ) 
 
                        if self.uri[i][:7] == "rtsp://":
-                         pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d decodebin%d. ! audiomix." % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1, i+1 );
-
-                    #else:
-                       # pipecmd += " videotestsrc pattern=%s ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d. " % ( self.pattern[i], self.width[i], self.height[i], i+1 );
+                         pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         if nosound==False: 
+                            pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
 
                 if ( self.hostname != "" ):
                     pipecmd += " rtpbin.send_rtp_src_0 ! udpsink host=%s port=%d ts-offset=0 name=vrtpsink rtpbin.send_rtcp_src_0 ! udpsink host=%s port=%d sync=false async=false name=vrtcpsink udpsrc port=%d name=vrtpsrc ! rtpbin.recv_rtcp_sink_0 " % ( self.hostname, self.videoport, self.hostname, self.videoport+1, self.videoport+5 )
-                    pipecmd += " rtpbin.send_rtp_src_1 ! udpsink host=%s port=%d ts-offset=0 name=artpsink rtpbin.send_rtcp_src_1 ! udpsink host=%s port=%d sync=false async=false name=artcpsink udpsrc port=%d name=artpsrc ! rtpbin.recv_rtcp_sink_1 " % ( self.hostname, self.audioport, self.hostname, self.audioport+1, self.audioport+5 )
+                    if nosound==False:
+                       pipecmd += " rtpbin.send_rtp_src_1 ! udpsink host=%s port=%d ts-offset=0 name=artpsink rtpbin.send_rtcp_src_1 ! udpsink host=%s port=%d sync=false async=false name=artcpsink udpsrc port=%d name=artpsrc ! rtpbin.recv_rtcp_sink_1 " % ( self.hostname, self.audioport, self.hostname, self.audioport+1, self.audioport+5 )
+
                 elif ( self.recfile != "" ):
                     #the real name uses a date in it
                     #not to override previous recordings
@@ -576,9 +588,10 @@ def main(args):
     global nbchannels
     global gwidth
     global gheight
+    global nosound
 
     def usage():
-        sys.stderr.write("usage: %s <nbchannels> <width> <height>\n" % args[0])
+        sys.stderr.write("usage: %s <nbchannels> <width> <height> [nosound]\n" % args[0])
         sys.exit(1)
 
     if len(args) < 4:
@@ -587,6 +600,10 @@ def main(args):
     nbchannels = int(args[1])
     gwidth = int(args[2])
     gheight = int(args[3])
+    if len(args)==5:
+      nosound=True 
+    else:
+      nosound=False
 
     # build the window
     mixer = Gst4chMixer()
