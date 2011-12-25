@@ -418,20 +418,16 @@ class Gst4chMixer:
 
 	def on_message(self, bus, message):
 		t = message.type
+
 		if t == gst.MESSAGE_EOS:
                   print "end of stream"
-                  # loop the stream
-                  #event = gst.event_new_seek(1.0, gst.FORMAT_TIME,
-                  #  gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
-                  #  gst.SEEK_TYPE_SET, 0,
-                  #  gst.SEEK_TYPE_NONE, 0)
-
-                  #res = mixer.player.send_event(event)
-                  #if res:
-                  #  print "setting new stream time to 0"
-                  #  mixer.player.set_new_stream_time(0L)
-                  #else:
-                  #  print "seek to %r failed" % location
+                  
+                  # remove all video files and restart ( no better way for now )
+                  # you can actually play only one video really
+                  for i in range(0, nbchannels):
+                      if self.uri[i][:7] == "file://":
+                         self.uri[i]=""
+                  self.launch_pipe()
 
                 elif t == gst.MESSAGE_ELEMENT:
                    st = message.structure
@@ -534,7 +530,7 @@ class Gst4chMixer:
                          detectstring = ""
 
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " filesrc name=filesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
 
