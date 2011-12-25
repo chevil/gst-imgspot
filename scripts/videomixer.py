@@ -12,7 +12,7 @@
 # with the following commands:
 # 
 # adding a video source :
-# POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}  
+# POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}  
 # POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
 # POST /inputs/add params : {channel: n, url: 'rtsp:///wowza.com:1935/app/stream.sdp'}  
@@ -30,6 +30,10 @@
 # POST /inputs/show params : {channel: n}  
 # you don't need to restart the mixer
 
+# setting transparency on a channel
+# POST /inputs/alpha params : {alpha: dd.dd}  
+# you don't need to restart the mixer
+
 # positioning a channel
 # POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
 # you don't need to restart the mixer
@@ -41,6 +45,16 @@
 # setting playing position ( global position for video files )
 # POST /seek params : {seconds:nn}  
 # you don't need to restart the mixer
+
+# starting and stopping the mixer
+# POST /outputs/state params : {state: start|stop}  
+# note : when you add or remove a channel from 
+# the composition or activate recording, streaming or slides detection,
+# you need to send a new start message to the mixer
+# so to have a smooth experience,
+# prepare all your channels before,
+# even the different videos ans cameras 
+# you want to use in a session
 
 # recording the output
 # POST /outputs/record params : {file: '/path/recording.mp4'}  
@@ -59,16 +73,6 @@
 # note : streaming and recording are exclusive
 # because if you stream you can record the stream
 # on another machine or on the server
-
-# starting and stopping the mixer
-# POST /outputs/state params : {state: start|stop}  
-# note : when you add or remove a channel from 
-# the composition or activate recording, streaming or slides detection,
-# you need to send a new start message to the mixer
-# so to have a smooth experience,
-# prepare all your channels before,
-# even the different videos ans cameras 
-# you want to use in a session
 
 # detecting images/slides on a channel
 # POST /inputs/detect params : {channel:n, imagedir: /path/slides, minscore: score}  
@@ -156,13 +160,13 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.send_header('Content-type', 'html')
                self.end_headers()
                return
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
             pads=list(mixer.player.get_by_name("mix").sink_pads())
             for j in range(0, len(pads)):
                 if pads[j].props.zorder == channel+1:
                    pads[j].props.alpha=0.0
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
 
         elif self.path == "/inputs/show":
           if "channel" not in params:
@@ -185,6 +189,28 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'html')
             self.end_headers()
 
+        elif self.path == "/inputs/alpha":
+          if "channel" not in params or "alpha" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          else:
+            channel = int( params['channel'][0] )
+            alpha = float( params['alpha'][0] )
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            if ( channel < 0 or channel >= nbchannels or alpha<0 or alpha>1.0 ):
+               self.send_response(400, 'Bad request')
+               self.send_header('Content-type', 'html')
+               self.end_headers()
+               return
+            pads=list(mixer.player.get_by_name("mix").sink_pads())
+            for j in range(0, len(pads)):
+                if pads[j].props.zorder == channel+1:
+                   pads[j].props.alpha=alpha
+
         elif self.path == "/inputs/move":
           if "channel" not in params or "posx" not in params or "posy" not in params:
             self.send_response(400, 'Bad request')
@@ -200,6 +226,9 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
               self.send_header('Content-type', 'html')
               self.end_headers()
               return
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
             mixer.xpos[channel]=posx
             mixer.ypos[channel]=posy
             pads=list(mixer.player.get_by_name("mix").sink_pads())
@@ -207,9 +236,6 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                 if pads[j].props.zorder == channel+1:
                    pads[j].props.xpos=posx
                    pads[j].props.ypos=posy
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
 
         elif self.path == "/inputs/resize":
           if "channel" not in params or "width" not in params or "height" not in params:
@@ -226,12 +252,16 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
               self.send_header('Content-type', 'html')
               self.end_headers()
               return
-            mixer.width[channel]=width
-            mixer.height[channel]=height
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
-            mixer.position_channels()
+            mixer.owidth[channel]=width
+            mixer.oheight[channel]=height
+            pads=list(mixer.player.get_by_name("mix").sink_pads())
+            for j in range(0, len(pads)):
+                if pads[j].props.zorder == channel+1:
+                   pads[j].props.width=width
+                   pads[j].props.height=height
 
         elif self.path == "/seek":
           if "seconds" not in params:
@@ -376,6 +406,8 @@ class Gst4chMixer:
                 self.ypos=[]
                 self.width=[]
                 self.height=[]
+                self.owidth=[]
+                self.oheight=[]
                 self.pattern=[]
                 self.imagedir=[]
                 self.minscore=[]
@@ -389,6 +421,8 @@ class Gst4chMixer:
                    self.ypos.append( 0 );
                    self.width.append( 320 );
                    self.height.append( 240 );
+                   self.owidth.append( 320 );
+                   self.oheight.append( 240 );
                    self.imagedir.append( "" );
                    self.minscore.append( 0 );
 
@@ -504,13 +538,13 @@ class Gst4chMixer:
                 elif nosound==False:
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! queue leaky=1 ! autoaudiosink "
 
-                pipecmd += "videoscaledmixer name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 "
+                pipecmd += "videoscaledmixer name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 sink_0::width=%d sink_0::height=%d " % ( self.txsize, self.tysize )
 
                 for i in range(0, nbchannels):
                     if self.uri[i] != "":
-                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=1 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
+                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=1 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1, i+1, self.owidth[i], i+1, self.oheight[i] )
                     else:
-                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1 )
+                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1, i+1, self.owidth[i], i+1, self.oheight[i] )
 
                 if ( self.hostname != "" ):
                     pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue leaky=1 ! rtph264pay ! rtpbin.send_rtp_sink_0 "
