@@ -1,5 +1,9 @@
-# all the commands are in ./scripts
+#  --------------------- PREREQUISITES -----------------------------------------------------
+# before using the videomixer, follow the steps from INSTALL
+#
+# all the commands refered her are in ./scripts
 
+#  --------------------- USAGE -------------------------------------------------------------
 # usage : python videomixer.py 3 640 480 <nosound>
 # this script is a nth channel video mixer
 # you set the number of channel by passing it as argument
