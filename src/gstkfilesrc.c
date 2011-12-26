@@ -165,7 +165,7 @@ enum
 #define DEFAULT_BLOCKSIZE       4*1024
 #define DEFAULT_MMAPSIZE        4*1024*1024
 #define DEFAULT_TOUCH           TRUE
-#define DEFAULT_USEMMAP         TRUE
+#define DEFAULT_USEMMAP         FALSE
 #define DEFAULT_SEQUENTIAL      FALSE
 
 enum
@@ -361,7 +361,7 @@ gst_kfilesrc_set_location (GstKFileSrc * src, const gchar * location)
   //   goto wrong_state;
   // GST_OBJECT_UNLOCK (src);
 
-  printf( "setting location the hard way\n" );
+  // printf( "setting location the hard way\n" );
   
   g_free (src->filename);
   g_free (src->uri);
@@ -376,14 +376,14 @@ gst_kfilesrc_set_location (GstKFileSrc * src, const gchar * location)
     src->filename = g_strdup (location);
     src->uri = gst_uri_construct ("file", src->filename);
   }
-  // g_object_notify (G_OBJECT (src), "location");
+  g_object_notify (G_OBJECT (src), "location");
   gst_uri_handler_new_uri (GST_URI_HANDLER (src), src->uri);
 
   // opening the file again
-  // GST_OBJECT_LOCK (src);
+  GST_OBJECT_LOCK (src);
   gst_kfilesrc_stop( (GstBaseSrc *) src );
   gst_kfilesrc_start( (GstBaseSrc *) src );
-  // GST_OBJECT_UNLOCK (src);
+  GST_OBJECT_UNLOCK (src);
 
   return TRUE;
 
@@ -876,17 +876,20 @@ gst_kfilesrc_create_read (GstKFileSrc * src, guint64 offset, guint length,
   /* ERROR */
 seek_failed:
   {
+    printf( "seek_failed\n" );
     GST_ELEMENT_ERROR (src, RESOURCE, READ, (NULL), GST_ERROR_SYSTEM);
     return GST_FLOW_ERROR;
   }
 could_not_read:
   {
+    printf( "could not read\n" );
     GST_ELEMENT_ERROR (src, RESOURCE, READ, (NULL), GST_ERROR_SYSTEM);
     gst_buffer_unref (buf);
     return GST_FLOW_ERROR;
   }
 unexpected_eos:
   {
+    printf( "unexpected eos\n" );
     GST_ELEMENT_ERROR (src, RESOURCE, READ, (NULL),
         ("unexpected end of file."));
     gst_buffer_unref (buf);
@@ -894,6 +897,7 @@ unexpected_eos:
   }
 eos:
   {
+    printf( "normal eos\n" );
     GST_DEBUG ("non-regular file hits EOS");
     gst_buffer_unref (buf);
     return GST_FLOW_OK;

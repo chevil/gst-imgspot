@@ -38,6 +38,10 @@
 # POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
 # you don't need to restart the mixer
 
+# setting z-order of a channel
+# POST /inputs/zorder params : {channel:n, zorder: n}  
+# you don't need to restart the mixer
+
 # resizing a channel
 # POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
 # you don't need to restart the mixer
@@ -165,7 +169,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.end_headers()
             pads=list(mixer.player.get_by_name("mix").sink_pads())
             for j in range(0, len(pads)):
-                if pads[j].props.zorder == channel+1:
+                if pads[j].props.ename == "channel%d" % ( channel+1 ):
                    pads[j].props.alpha=0.0
 
         elif self.path == "/inputs/show":
@@ -183,7 +187,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                return
             pads=list(mixer.player.get_by_name("mix").sink_pads())
             for j in range(0, len(pads)):
-                if pads[j].props.zorder == channel+1:
+                if pads[j].props.ename == "channel%d" % ( channel+1 ):
                    pads[j].props.alpha=1.0
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
@@ -208,7 +212,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                return
             pads=list(mixer.player.get_by_name("mix").sink_pads())
             for j in range(0, len(pads)):
-                if pads[j].props.zorder == channel+1:
+                if pads[j].props.ename == "channel%d" % ( channel+1 ):
                    pads[j].props.alpha=alpha
 
         elif self.path == "/inputs/move":
@@ -233,9 +237,32 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             mixer.ypos[channel]=posy
             pads=list(mixer.player.get_by_name("mix").sink_pads())
             for j in range(0, len(pads)):
-                if pads[j].props.zorder == channel+1:
+                if pads[j].props.ename == "channel%d" % ( channel+1 ):
                    pads[j].props.xpos=posx
                    pads[j].props.ypos=posy
+
+        elif self.path == "/inputs/zorder":
+          if "channel" not in params or "zorder" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          else:
+            channel = int( params['channel'][0] )
+            zorder = int( params['zorder'][0] )
+            if channel < 0 or channel >= nbchannels or zorder<0:
+              self.send_response(400, 'Bad request')
+              self.send_header('Content-type', 'html')
+              self.end_headers()
+              return
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            mixer.zorder[channel]=zorder
+            pads=list(mixer.player.get_by_name("mix").sink_pads())
+            for j in range(0, len(pads)):
+                if pads[j].props.ename == "channel%d" % ( channel+1 ):
+                   pads[j].props.zorder=zorder
 
         elif self.path == "/inputs/resize":
           if "channel" not in params or "width" not in params or "height" not in params:
@@ -259,7 +286,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             mixer.oheight[channel]=height
             pads=list(mixer.player.get_by_name("mix").sink_pads())
             for j in range(0, len(pads)):
-                if pads[j].props.zorder == channel+1:
+                if pads[j].props.ename == "channel%d" % ( channel+1 ):
                    pads[j].props.width=width
                    pads[j].props.height=height
 
@@ -408,6 +435,7 @@ class Gst4chMixer:
                 self.height=[]
                 self.owidth=[]
                 self.oheight=[]
+                self.zorder=[]
                 self.pattern=[]
                 self.imagedir=[]
                 self.minscore=[]
@@ -423,6 +451,7 @@ class Gst4chMixer:
                    self.height.append( 240 );
                    self.owidth.append( 320 );
                    self.oheight.append( 240 );
+                   self.zorder.append( i+1 );
                    self.imagedir.append( "" );
                    self.minscore.append( 0 );
 
@@ -497,7 +526,7 @@ class Gst4chMixer:
                 for j in range(0, len(pads)):
                    for i in range(0, nbchannels):
                       if self.uri[i] !="":
-                        if pads[j].props.zorder == i+1:
+                        if pads[j].props.name == "channel%d" % ( channel+1 ):
                            videocap = gst.Caps("video/x-raw-yuv,width=%d,height=%d" % ( self.width[i], self.height[i] ))
                            vscale = self.player.get_by_name( "videoscale%d" % ( i+1 ) )
                            vpads=list(vscale.src_pads())
@@ -507,7 +536,8 @@ class Gst4chMixer:
 
                          # print "setting pad %d to %d %d" % ( j, self.xpos[i], self.ypos[i] )
                    # resize the whole screen
-                   # if pads[j].props.zorder == 0: #background pad
+                   # background pad
+                   # if pads[j].props.name == "channel0":
                    #       videocap = gst.Caps("video/x-raw-yuv,width=%d,height=%d" % ( self.txsize, self.tysize ))
                    #       print "setting caps to : video/x-raw-yuv,width=%d,height=%d" % ( self.txsize, self.tysize )
                    #       pads[j].set_caps(videocap)
@@ -532,24 +562,24 @@ class Gst4chMixer:
                     pipecmd += "gstrtpbin name=rtpbin "
 
                 if self.hostname != "" and nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue leaky=1 ! autoaudiosink audmixout. ! queue leaky=1 ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
                 elif self.recfile != "" and nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue leaky=1 ! autoaudiosink audmixout. ! queue leaky=1 ! ffenc_aac ! queue leaky=1 ! mux. "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! queue ! mux. "
                 elif nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! queue leaky=1 ! autoaudiosink "
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! queue ! autoaudiosink "
 
-                pipecmd += "videoscaledmixer name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 sink_0::width=%d sink_0::height=%d " % ( self.txsize, self.tysize )
+                pipecmd += "videoscaledmixer name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 sink_0::width=%d sink_0::height=%d sink_0::ename=channel0 " % ( self.txsize, self.tysize )
 
                 for i in range(0, nbchannels):
                     if self.uri[i] != "":
-                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=1 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1, i+1, self.owidth[i], i+1, self.oheight[i] )
+                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=1 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d sink_%d::ename=channel%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, self.zorder[i], i+1, self.owidth[i], i+1, self.oheight[i], i+1, i+1 )
                     else:
-                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, i+1, i+1, self.owidth[i], i+1, self.oheight[i] )
+                       pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d sink_%d::ename=channel%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, self.zorder[i], i+1, self.owidth[i], i+1, self.oheight[i], i+1, i+1 )
 
                 if ( self.hostname != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue leaky=1 ! rtph264pay ! rtpbin.send_rtp_sink_0 "
+                    pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
                 elif ( self.recfile != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! ffenc_mpeg4 ! queue leaky=1 ! mux. "
+                    pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. ! queue ! ffenc_mpeg4 ! queue ! mux. "
                 else:
                     pipecmd += "! autovideosink "
 
@@ -559,25 +589,25 @@ class Gst4chMixer:
                     if ( self.uri[i] != "" ):
 
                        if ( self.imagedir[i] != "" ):
-                         detectstring = "imgspot width=%d height=%d algorithm=surf imgdir=%s minscore=%d output=bus !" % ( self.width[i], self.height[i], self.imagedir[i], self.minscore[i] )
+                         detectstring = "imgspot width=%d height=%d algorithm=surf imgdir=%s minscore=%d output=bus ! ffmpegcolorspace ! " % ( self.width[i], self.height[i], self.imagedir[i], self.minscore[i] )
                        else:
                          detectstring = ""
 
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " filesrc name=filesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
 
                        if self.uri[i][:9] == "device://":
-                         pipecmd += " v4l2src name=v4l2src%d device=%s ! ffmpegcolorspace ! %s ffmpegcolorspace !  video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " v4l2src name=v4l2src%d device=%s ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
 
                        if self.uri[i][:7] == "http://":
-                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audiomix. " % ( i+1 ) 
 
                        if self.uri[i][:7] == "rtsp://":
-                         pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %s ffmpegcolorspace ! video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
 

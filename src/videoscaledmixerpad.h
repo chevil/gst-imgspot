@@ -56,6 +56,7 @@ struct _GstVideoScaledMixerPad
   /* caps */
   gint width, height;
   gint owidth, oheight; // output width and height
+  gchar *ename; // external name of the pad ( for python scripts )
   gint fps_n;
   gint fps_d;
 

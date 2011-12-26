@@ -43,6 +43,12 @@
 
 @node.js command : >node alphasource.js 0 0.5
 
+# setting z-order of a channel
+# POST /inputs/zorder params : {channel:n, zorder: n}
+# you don't need to restart the mixer
+
+@node.js command : >node zordersource.js 0 2
+
 # positioning a channel
 # POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}
 # you don't need to restart the mixer

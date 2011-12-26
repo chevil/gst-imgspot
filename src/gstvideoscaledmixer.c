@@ -177,6 +177,7 @@ struct _GstVideoScaledMixerCollect
 #define DEFAULT_PAD_ALPHA  1.0
 #define DEFAULT_PAD_WIDTH  320
 #define DEFAULT_PAD_HEIGHT 240
+#define DEFAULT_PAD_ENAME "noone"
 enum
 {
   PROP_PAD_0,
@@ -185,7 +186,8 @@ enum
   PROP_PAD_YPOS,
   PROP_PAD_ALPHA,
   PROP_PAD_WIDTH,
-  PROP_PAD_HEIGHT
+  PROP_PAD_HEIGHT,
+  PROP_PAD_ENAME
 };
 
 G_DEFINE_TYPE (GstVideoScaledMixerPad, gst_videoscaledmixer_pad, GST_TYPE_PAD);
@@ -451,6 +453,9 @@ gst_videoscaledmixer_pad_get_property (GObject * object, guint prop_id,
     case PROP_PAD_WIDTH:
       g_value_set_int (value, pad->owidth);
       break;
+    case PROP_PAD_ENAME:
+      g_value_set_string (value, pad->ename);
+      break;
     case PROP_PAD_HEIGHT:
       g_value_set_int (value, pad->oheight);
       break;
@@ -476,12 +481,7 @@ gst_videoscaledmixer_pad_set_property (GObject * object, guint prop_id,
 
   switch (prop_id) {
     case PROP_PAD_ZORDER:
-      GST_VIDEOSCALED_MIXER_LOCK (mix);
       pad->zorder = g_value_get_uint (value);
-
-      mix->sinkpads = g_slist_sort (mix->sinkpads,
-          (GCompareFunc) pad_zorder_compare);
-      GST_VIDEOSCALED_MIXER_UNLOCK (mix);
       break;
     case PROP_PAD_XPOS:
       pad->xpos = g_value_get_int (value);
@@ -494,6 +494,10 @@ gst_videoscaledmixer_pad_set_property (GObject * object, guint prop_id,
       break;
     case PROP_PAD_WIDTH:
       pad->owidth = g_value_get_int (value);
+      break;
+    case PROP_PAD_ENAME:
+      pad->ename = (char *) malloc( strlen ( (char *) g_value_get_string (value) ) + 1 );
+      strcpy( pad->ename, (char *) g_value_get_string (value) );
       break;
     case PROP_PAD_HEIGHT:
       pad->oheight = g_value_get_int (value);
@@ -538,6 +542,10 @@ gst_videoscaledmixer_pad_class_init (GstVideoScaledMixerPadClass * klass)
       g_param_spec_int ("height", "Height", "Output height",
           G_MININT, G_MAXINT, DEFAULT_PAD_HEIGHT,
           G_PARAM_READWRITE | GST_PARAM_CONTROLLABLE | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_PAD_ENAME,
+      g_param_spec_string ("ename", "EName", "external name of the pad",
+          DEFAULT_PAD_ENAME,
+          G_PARAM_READWRITE | GST_PARAM_CONTROLLABLE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -557,6 +565,8 @@ gst_videoscaledmixer_pad_init (GstVideoScaledMixerPad * mixerpad)
   mixerpad->alpha = DEFAULT_PAD_ALPHA;
   mixerpad->owidth = DEFAULT_PAD_WIDTH;
   mixerpad->oheight = DEFAULT_PAD_HEIGHT;
+  mixerpad->ename = (char*)malloc(strlen(DEFAULT_PAD_ENAME)+1);
+  strcpy( mixerpad->ename, DEFAULT_PAD_ENAME );
 }
 
 /* GstVideoScaledMixer */
@@ -803,10 +813,16 @@ gst_videoscaledmixer_fill_queues (GstVideoScaledMixer * mix,
     }
   }
 
-  // if (need_more_data)
-  //  return 0;
-  // if (eos)
-  //  return -1;
+  if (need_more_data)
+  {
+    printf( "video scaled mixer: need more data");
+    return 0;
+  }
+  if (eos)
+  {
+    printf( "video scaled mixer: got eos");
+    return -1;
+  }
 
   return 1;
 }
@@ -852,30 +868,38 @@ gst_videoscaledmixer_blend_buffers (GstVideoScaledMixer * mix,
     }
   }
 
-  // now copying data in an optimized way
-  guint8 *pYData, *pUData, *pVData;;
-  guint8 *pYOutputData = GST_BUFFER_DATA (*outbuf);
-  guint8 *pUOutputData = pYOutputData+(mix->width*mix->height);
-  guint8 *pVOutputData = pYOutputData+(mix->width*mix->height)+(mix->width*mix->height>>2);
-  GstVideoScaledMixerPad *cpad;
-  int px, py;
-  int rx, ry;
- 
-  // for all output pixel
-  for ( py=0; py<mix->height; py++ ) 
+  if ( mix->format == GST_VIDEO_FORMAT_I420 )
   {
-     for ( px=0; px<mix->width; px++ ) 
-     { 
+    // now copying data in an optimized way
+    guint8 *pYData, *pUData, *pVData;;
+    guint8 *pYOutputData = GST_BUFFER_DATA (*outbuf);
+    guint8 *pUOutputData = pYOutputData+(mix->width*mix->height);
+    guint8 *pVOutputData = pYOutputData+(mix->width*mix->height)+(mix->width*mix->height>>2);
+    GstVideoScaledMixerPad *cpad;
+    int px, py;
+    int rx, ry;
+    int pzorder;
+ 
+    // for all output pixel
+    for ( py=0; py<mix->height; py++ ) 
+    {
+      for ( px=0; px<mix->width; px++ ) 
+      { 
         pYData=NULL;
+        pzorder=0;
 
         for (l = mix->sinkpads; l; l = l->next) {
            GstVideoScaledMixerPad *pad = l->data;
            GstVideoScaledMixerCollect *mixcol = pad->mixcol;
 
-           if (mixcol->buffer != NULL && (pad->alpha>0.0) ) {
-              if ( px>=pad->xpos && px<(pad->xpos+pad->owidth) &&
-                   py>=pad->ypos && py<(pad->ypos+pad->oheight) )
+           if (mixcol->buffer != NULL && (pad->alpha>0.0) ) 
+           {
+              if ( px>=pad->xpos && px<(pad->xpos+pad->owidth)
+                   && py>=pad->ypos && py<(pad->ypos+pad->oheight)
+                   && (pad->zorder)>=pzorder
+                 )
               {
+                 pzorder = pad->zorder;
                  pYData = GST_BUFFER_DATA( mixcol->buffer );
                  pUData = pYData+(pad->width*pad->height);
                  pVData = pYData+(pad->width*pad->height)+(pad->width*pad->height>>2);
@@ -892,7 +916,12 @@ gst_videoscaledmixer_blend_buffers (GstVideoScaledMixer * mix,
            *(pUOutputData+(py>>1)*(mix->width>>1)+(px>>1)) = *(pUData+(ry>>1)*(cpad->width>>1)+(rx>>1));
            *(pVOutputData+(py>>1)*(mix->width>>1)+(px>>1)) = *(pVData+(ry>>1)*(cpad->width>>1)+(rx>>1));
         }
-     }
+      }
+    }
+  }
+  else
+  {
+    GST_ERROR_OBJECT (mix, "Your output will be green, sorry, only YUV/I420 format is supported in this experimental mixer");
   }
 
   return GST_FLOW_OK;
@@ -1116,6 +1145,7 @@ gst_videoscaledmixer_query_duration (GstVideoScaledMixer * mix, GstQuery * query
 
         /* ask sink peer for duration */
         res &= gst_pad_query_peer_duration (pad, &format, &duration);
+        printf( "pad duration : %d %ld\n", res, duration );
         /* take max from all valid return values */
         if (res) {
           /* valid unknown length, stop searching */
@@ -1751,6 +1781,8 @@ gst_videoscaledmixer_request_new_pad (GstElement * element,
     mixpad->alpha = DEFAULT_PAD_ALPHA;
     mixpad->owidth = DEFAULT_PAD_WIDTH;
     mixpad->oheight = DEFAULT_PAD_HEIGHT;
+    mixpad->ename = (char*)malloc(strlen(DEFAULT_PAD_ENAME)+1);
+    strcpy( mixpad->ename, DEFAULT_PAD_ENAME );
 
     mixcol = (GstVideoScaledMixerCollect *)
         gst_collect_pads2_add_pad_full (mix->collect, GST_PAD (mixpad),

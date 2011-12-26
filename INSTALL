@@ -11,7 +11,7 @@ when executing a script.
 The plugin uses OpenCV for the recognition of images.
 
 To use it on Ubuntu, first install the dependencies (on maverick) :
-> sudo apt-get install gstreamer0.10 libgstreamer-plugins-base0.10-0 libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev gstreamer0.10-plugins-good gstreamer0.10-plugins-bad gstreamer0.10-plugins-ugly-multiverse gstreamer0.10-plugins-ugly gstreamer0.10-pulseaudio gstreamer0.10-ffmpeg libcv-dev libcvaux-dev libhighgui-dev python python-gst0.10 python-gtk2
+> sudo apt-get install gstreamer-0.10 libgstreamer-plugins-base0.10-0 libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev gstreamer0.10-plugins-good gstreamer0.10-plugins-bad gstreamer0.10-plugins-ugly-multiverse gstreamer0.10-plugins-ugly gstreamer0.10-pulseaudio gstreamer0.10-ffmpeg libcv-dev libcvaux-dev libhighgui-dev python python-gst0.10 python-gtk2 nodejs
 
 Then compile the plugins with :
 
