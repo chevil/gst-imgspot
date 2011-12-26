@@ -10,55 +10,19 @@
 # at first it starts with a black screen of WxH ( no emission )
 # then you can manipulate the video composition 
 # with the following commands:
-# 
+  
+#  --------------------- STATIC CONFIGURATION -----------------------------------------------
+
 # adding a video source :
 # POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}  
 # POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
 # POST /inputs/add params : {channel: n, url: 'rtsp:///wowza.com:1935/app/stream.sdp'}  
-# after adding a channel, you have to restart the mixer with "/outputs/state start"
+# after this operation, the mixer is restarted
 
 # removing a video source :
 # POST /inputs/remove params : {channel: n}  
-# after removing a channel, you have to restart the mixer with "/outputs/state start"
-
-# hiding a video source :
-# POST /inputs/hide params : {channel: n}  
-# you don't need to restart the mixer
-
-# showing a (hidden) video source :
-# POST /inputs/show params : {channel: n}  
-# you don't need to restart the mixer
-
-# setting transparency on a channel
-# POST /inputs/alpha params : {alpha: dd.dd}  
-# you don't need to restart the mixer
-
-# positioning a channel
-# POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
-# you don't need to restart the mixer
-
-# setting z-order of a channel
-# POST /inputs/zorder params : {channel:n, zorder: n}  
-# you don't need to restart the mixer
-
-# resizing a channel
-# POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
-# you don't need to restart the mixer
-
-# setting playing position ( global position for video files )
-# POST /seek params : {seconds:nn}  
-# you don't need to restart the mixer
-
-# starting and stopping the mixer
-# POST /outputs/state params : {state: start|stop}  
-# note : when you add or remove a channel from 
-# the composition or activate recording, streaming or slides detection,
-# you need to send a new start message to the mixer
-# so to have a smooth experience,
-# prepare all your channels before,
-# even the different videos ans cameras 
-# you want to use in a session
+# after this operation, the mixer is restarted
 
 # recording the output
 # POST /outputs/record params : {file: '/path/recording.mp4'}  
@@ -68,19 +32,57 @@
 # the real name of the recording will be :
 # /tmp/output-mm-dd-hh:mm:ss.mp4 for example
 # if you asked for /tmp/output.mp4
-# after setting the record file, you have to restart the mixer with "/outputs/state start"
+# after this operation, the mixer is restarted
 
 # streaming the output
 # POST /outputs/stream params : {hostname: 'xxx.xxx.xxx.xxx', audioport: nnnn, videoport: nnnn}  
 # this activate a rtp streaming towards a wowza server for example
-# after setting the streaming, you have to restart the mixer with "/outputs/state start"
 # note : streaming and recording are exclusive
 # because if you stream you can record the stream
 # on another machine or on the server
+# after this operation, the mixer is restarted
 
 # detecting images/slides on a channel
 # POST /inputs/detect params : {channel:n, imagedir: /path/slides, minscore: score}  
-# after setting detection, you have to restart the mixer with "/outputs/state start"
+# after this operation, the mixer is restarted
+
+#  -------------------------- PASSING IN DYNAMIC MODE --------------------------------------
+
+# starting and stopping the mixer
+# POST /outputs/state params : {state: start|stop}  
+# note : when you add or remove a channel from 
+# the composition or activate recording, streaming or slides detection,
+# the mixer is restarted
+# so to have a smooth experience,
+# prepare all your channels before,
+# even the different videos ans cameras 
+# you want to use in a session
+
+#  -------------------------- DYNAMIC OPERATIONS --------------------------------------------
+
+# positioning a channel
+# POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}  
+
+# resizing a channel
+# POST /inputs/resize params : {channel:n, width: nnn, height: nnn}  
+
+# hiding a channel :
+# POST /inputs/hide params : {channel: n}  
+
+# showing a (hidden) channel :
+# POST /inputs/show params : {channel: n}  
+
+# setting transparency on a channel
+# POST /inputs/alpha params : {alpha: dd.dd}  
+
+# setting z-order of a channel
+# POST /inputs/zorder params : {channel:n, zorder: n}  
+
+# setting playing position ( global position for video files )
+# ( a bit buggy with some video formats )
+# POST /seek params : {seconds:nn}  
+
+#  -------------------------- THAT's ALL for NOW --------------------------------------------
 
 import sys, os, time, threading, thread
 import pygtk, gtk, gobject
@@ -124,12 +126,12 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.send_header('Content-type', 'html')
                self.end_headers()
                return
-            mixer.uri[channel]=newsource
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
-            #mixer.launch_pipe()
-	    mixer.player.set_state(gst.STATE_PAUSED)
+            mixer.uri[channel]=newsource
+            mixer.launch_pipe()
+	    #mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/delete":
           if "channel" not in params:
@@ -144,12 +146,12 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.send_header('Content-type', 'html')
                self.end_headers()
                return
-            mixer.uri[channel]=""
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
-            #mixer.launch_pipe()
-	    mixer.player.set_state(gst.STATE_PAUSED)
+            mixer.uri[channel]=""
+            mixer.launch_pipe()
+	    #mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/hide":
           if "channel" not in params:
@@ -185,13 +187,13 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.send_header('Content-type', 'html')
                self.end_headers()
                return
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
             pads=list(mixer.player.get_by_name("mix").sink_pads())
             for j in range(0, len(pads)):
                 if pads[j].props.ename == "channel%d" % ( channel+1 ):
                    pads[j].props.alpha=1.0
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
 
         elif self.path == "/inputs/alpha":
           if "channel" not in params or "alpha" not in params:
@@ -202,14 +204,14 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
           else:
             channel = int( params['channel'][0] )
             alpha = float( params['alpha'][0] )
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
             if ( channel < 0 or channel >= nbchannels or alpha<0 or alpha>1.0 ):
                self.send_response(400, 'Bad request')
                self.send_header('Content-type', 'html')
                self.end_headers()
                return
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
             pads=list(mixer.player.get_by_name("mix").sink_pads())
             for j in range(0, len(pads)):
                 if pads[j].props.ename == "channel%d" % ( channel+1 ):
@@ -314,6 +316,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                     gst.SEEK_TYPE_SET, seconds,
                     gst.SEEK_TYPE_NONE, 0)
 
+            # try the seek
             res = mixer.player.send_event(event)
             if res:
                print "setting new stream time to 0"
@@ -340,6 +343,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.end_headers()
             mixer.uri[channel]=url
             mixer.launch_pipe()
+	    #mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/detect":
           if "channel" not in params or "imagedir" not in params or "minscore" not in params:
@@ -361,8 +365,8 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
-            #mixer.launch_pipe()
-	    mixer.player.set_state(gst.STATE_PAUSED)
+            mixer.launch_pipe()
+	    #mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/outputs/record":
           if "file" not in params:
@@ -374,8 +378,8 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
           self.send_response(200, 'OK')
           self.send_header('Content-type', 'html')
           self.end_headers()
-          #mixer.launch_pipe()
-	  mixer.player.set_state(gst.STATE_PAUSED)
+          mixer.launch_pipe()
+	  #mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/outputs/stream":
           if "hostname" not in params or "audioport" not in params or "videoport" not in params:
@@ -389,8 +393,8 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
           self.send_response(200, 'OK')
           self.send_header('Content-type', 'html')
           self.end_headers()
-          #mixer.launch_pipe()
-	  mixer.player.set_state(gst.STATE_PAUSED)
+          mixer.launch_pipe()
+	  #mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/outputs/state":
           if "state" not in params:
@@ -483,15 +487,8 @@ class Gst4chMixer:
 		t = message.type
 
 		if t == gst.MESSAGE_EOS:
-                  print "end of stream"
+                   print "end of stream received"
                   
-                  # remove all video files and restart ( no better way for now )
-                  # you can actually play only one video really
-                  for i in range(0, nbchannels):
-                      if self.uri[i][:7] == "file://":
-                         self.uri[i]=""
-                  self.launch_pipe()
-
                 elif t == gst.MESSAGE_ELEMENT:
                    st = message.structure
                    if st.get_name() == "imgspot":
@@ -499,6 +496,15 @@ class Gst4chMixer:
                       gm = time.gmtime(self.curtime-self.starttime)
                       stime = "%.2d:%.2d:%.2d" % ( gm.tm_hour, gm.tm_min, gm.tm_sec )
                       print "imgspot : %s : image spotted : %s at %s (score=%d)" % (st["algorithm"], st["name"], stime, st["score"])
+
+                   elif st.get_name() == "kfilesrc":
+                      print "soon end of video : %s" % ( st["filename"] )
+                      # clear up that video and relaunch the pipe
+                      # this shouldn't affect the RTP streaming
+                      for i in range(0, nbchannels):
+                         if self.uri[i] == "file://"+st["filename"]:
+                            self.uri[i] = ""
+                            self.launch_pipe()
 
 		elif t == gst.MESSAGE_ERROR:
 			err, debug = message.parse_error()
@@ -516,43 +522,6 @@ class Gst4chMixer:
                         imagesink.set_property("force-aspect-ratio", True)
                         imagesink.set_xwindow_id(self.movie_window.window.xid)
                         gtk.gdk.threads_leave()
-
-	def position_channels(self):
-
-		self.player.set_state(gst.STATE_PAUSED)
-                mixer = self.player.get_by_name( "mix" )
-
-                pads=list(mixer.sink_pads())
-                for j in range(0, len(pads)):
-                   for i in range(0, nbchannels):
-                      if self.uri[i] !="":
-                        if pads[j].props.name == "channel%d" % ( channel+1 ):
-                           videocap = gst.Caps("video/x-raw-yuv,width=%d,height=%d" % ( self.width[i], self.height[i] ))
-                           vscale = self.player.get_by_name( "videoscale%d" % ( i+1 ) )
-                           vpads=list(vscale.src_pads())
-                           vpads[0].unlink( pads[j] )
-                           vpads[0].set_caps(videocap)
-                           vpads[0].link( pads[j] );
-
-                         # print "setting pad %d to %d %d" % ( j, self.xpos[i], self.ypos[i] )
-                   # resize the whole screen
-                   # background pad
-                   # if pads[j].props.name == "channel0":
-                   #       videocap = gst.Caps("video/x-raw-yuv,width=%d,height=%d" % ( self.txsize, self.tysize ))
-                   #       print "setting caps to : video/x-raw-yuv,width=%d,height=%d" % ( self.txsize, self.tysize )
-                   #       pads[j].set_caps(videocap)
-                   #       videotestsrc = self.player.get_by_name( "background" )
-                   #       bpads=list(videotestsrc.pads())
-                   #       for k in range(0, len(bpads)):
-                   #           bpads[k].set_caps(videocap)
-                   #       cpads=list(mixer.src_pads())
-                   #       for k in range(0, len(cpads)):
-                   #           cpads[k].set_caps(videocap)
-
-                # all the dynamic stuff deosn't seem to work really
-                # relaunching the pipe for now
-                #self.launch_pipe()
-		self.player.set_state(gst.STATE_PLAYING)
 
 	def launch_pipe(self):
 
@@ -577,7 +546,7 @@ class Gst4chMixer:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d sink_%d::ename=channel%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, self.zorder[i], i+1, self.owidth[i], i+1, self.oheight[i], i+1, i+1 )
 
                 if ( self.hostname != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
+                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
                 elif ( self.recfile != "" ):
                     pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. ! queue ! ffenc_mpeg4 ! queue ! mux. "
                 else:

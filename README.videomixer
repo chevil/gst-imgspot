@@ -1,84 +1,33 @@
+# all the commands are in ./scripts
+
 # usage : python videomixer.py 3 640 480 <nosound>
 # this script is a nth channel video mixer
 # you set the number of channel by passing it as argument
 # you also pass as arguments the width and height of the mix
-# and can eventually disactivate the sound
 # author : ydegoyon@gmail.com
 
 # the script takes commands from http ( by default on port 9999 )
 # at first it starts with a black screen of WxH ( no emission )
 # then you can manipulate the video composition
 # with the following commands:
-#
+
+#  --------------------- STATIC CONFIGURATION -----------------------------------------------
+
 # adding a video source :
 # POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}
 # POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}
 # POST /inputs/add params : {channel: n, url: 'rtsp:///wowza.com:1935/app/stream.sdp'}
-# after adding a channel, you have to restart the mixer with "/outputs/state start"
+# after this operation, the mixer is restarted
 
-@node.js command : >node addsource.js 0 device:///dev/video0
+@node.js command : node addsource.js 0 device:///dev/video0
+(note that the number of channel starts at 0)
 
 # removing a video source :
 # POST /inputs/remove params : {channel: n}
-# after removing a channel, you have to restart the mixer with "/outputs/state start"
+# after this operation, the mixer is restarted
 
-@node.js command : >node deletesource.js 0 
-
-# hiding a video source :
-# POST /inputs/hide params : {channel: n}
-# you don't need to restart the mixer
-
-@node.js command : >node hidesource.js 0 
-
-# showing a (hidden) video source :
-# POST /inputs/show params : {channel: n}
-# you don't need to restart the mixer
-
-@node.js command : >node showsource.js 0 
-
-# setting transparency on a channel
-# POST /inputs/alpha params : {alpha: dd.dd}
-# you don't need to restart the mixer
-
-@node.js command : >node alphasource.js 0 0.5
-
-# setting z-order of a channel
-# POST /inputs/zorder params : {channel:n, zorder: n}
-# you don't need to restart the mixer
-
-@node.js command : >node zordersource.js 0 2
-
-# positioning a channel
-# POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}
-# you don't need to restart the mixer
-
-@node.js command : >node movesource.js 0 320 240
-
-# resizing a channel
-# POST /inputs/resize params : {channel:n, width: nnn, height: nnn}
-# you don't need to restart the mixer
-
-@node.js command : >node resizesource.js 0 160 128
-
-# setting playing position ( global position for video files )
-# POST /seek params : {seconds:nn}
-# you don't need to restart the mixer
-
-@node.js command : >node seek.js 5 
-
-# starting and stopping the mixer
-# POST /outputs/state params : {state: start|stop}
-# note : when you add or remove a channel from
-# the composition or activate recording, streaming or slides detection,
-# you need to send a new start message to the mixer
-# so to have a smooth experience,
-# prepare all your channels before,
-# even the different videos ans cameras
-# you want to use in a session
-
-@node.js command : >node setstate.js start 
-@node.js command : >node setstate.js stop 
+@node.js command : node deletesource.js 0 device:///dev/video0
 
 # recording the output
 # POST /outputs/record params : {file: '/path/recording.mp4'}
@@ -88,38 +37,96 @@
 # the real name of the recording will be :
 # /tmp/output-mm-dd-hh:mm:ss.mp4 for example
 # if you asked for /tmp/output.mp4
-# after setting the record file, you have to restart the mixer with "/outputs/state start"
+# after this operation, the mixer is restarted
 
-@node.js command : >node recordoutput.js /tmp/output.mp4 
+@node.js command : node recordoutput.js /tmp/record.mp4
 
 # streaming the output
-# POST /outputs/stream params : {hostname: 'xxx.xxx.xxx.xxx', videoport: nnnn, audioport: nnnn}
+# POST /outputs/stream params : {hostname: 'xxx.xxx.xxx.xxx', audioport: nnnn, videoport: nnnn}
 # this activate a rtp streaming towards a wowza server for example
-# after setting the streaming, you have to restart the mixer with "/outputs/state start"
 # note : streaming and recording are exclusive
 # because if you stream you can record the stream
 # on another machine or on the server
+# after this operation, the mixer is restarted
 
-@node.js command : >node streamoutput.js 127.0.0.1 5000 5002
+@node.js command : node streamoutput.js 127.0.0.1 5000 5002
 
 # detecting images/slides on a channel
 # POST /inputs/detect params : {channel:n, imagedir: /path/slides, minscore: score}
-# after setting detection, you have to restart the mixer with "/outputs/state start"
+# after this operation, the mixer is restarted
 
-@node.js command : >node detectsource.js 0 /mnt/data/slides 30
+@node.js command : node detectsource.js 0 /mnt/data/slides 30
 
-KNOWN BUGS :
-============
+#  -------------------------- PASSING IN DYNAMIC MODE --------------------------------------
 
-* if the machine is not powerful enough, audio drops or cuts
-(but the audio in the file is still recorded)
+# starting and stopping the mixer
+# POST /outputs/state params : {state: start|stop}
+# note : when you add or remove a channel from
+# the composition or activate recording, streaming or slides detection,
+# the mixer is restarted
+# so to have a smooth experience,
+# prepare all your channels before,
+# even the different videos ans cameras
+# you want to use in a session
 
-* when playing a video file, the end of file is not caught
-by the python script ( for some reason it is lost )
-and the pipe freezes 
-workaround : when playing video files, check when they stop 
-and restart the pipe
+@node.js command : node setstate.js start
+@node.js command : node setstate.js stop
+
+#  -------------------------- DYNAMIC OPERATIONS --------------------------------------------
+
+# positioning a channel
+# POST /inputs/move params : {channel:n, posx: nnn, posy: nnn}
+
+@node.js command : node movesource.js 0 320 240
+
+# resizing a channel
+# POST /inputs/resize params : {channel:n, width: nnn, height: nnn}
+
+@node.js command : node resizesource.js 0 160 128
+
+# hiding a channel :
+# POST /inputs/hide params : {channel: n}
+
+@node.js command : node hidesource.js 0
+
+# showing a (hidden) channel :
+# POST /inputs/show params : {channel: n}
+
+@node.js command : node showsource.js 0
+
+# setting transparency on a channel
+# POST /inputs/alpha params : {alpha: dd.dd}
+
+@node.js command : node alphasource.js 0 0.3
+
+# setting z-order of a channel
+# POST /inputs/zorder params : {channel:n, zorder: n}
+
+@node.js command : node zordersource.js 0 2 
+
+# setting playing position ( global position for video files )
+# ( a bit buggy with some video formats )
+# POST /seek params : {seconds:nn}
+
+@node.js command : node seek.js 0 
+
+#  -------------------------- THAT's ALL for NOW --------------------------------------------
+
+KNOWN BUGS/HICUPS :
+===================
+
+
+* when playing a video file and reaching the end of the file,
+there is a short interruption that shouldn't cut the RTP streaming
+as it is restarted almost immediately,
+but the recordings will be cut in two parts
+( the new recording file will have a name with the new starting date ).
 
 * in some cases, especially when recording,
 the pipe might freeze if the machine is saturated
-workaround : always prefer to stream the mix and record the stream
+workaround : always prefer to stream the mix and
+record the output from the streaming server
+because recording locally makes the process often too heavy.
+
+* the seek function in video files is buggy
+with some video formats.

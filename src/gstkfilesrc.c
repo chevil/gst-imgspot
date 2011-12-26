@@ -380,10 +380,10 @@ gst_kfilesrc_set_location (GstKFileSrc * src, const gchar * location)
   gst_uri_handler_new_uri (GST_URI_HANDLER (src), src->uri);
 
   // opening the file again
-  GST_OBJECT_LOCK (src);
-  gst_kfilesrc_stop( (GstBaseSrc *) src );
-  gst_kfilesrc_start( (GstBaseSrc *) src );
-  GST_OBJECT_UNLOCK (src);
+  // GST_OBJECT_LOCK (src);
+  // gst_kfilesrc_stop( (GstBaseSrc *) src );
+  // gst_kfilesrc_start( (GstBaseSrc *) src );
+  // GST_OBJECT_UNLOCK (src);
 
   return TRUE;
 
@@ -867,6 +867,21 @@ gst_kfilesrc_create_read (GstKFileSrc * src, guint64 offset, guint length,
     GST_BUFFER_OFFSET_END (buf) = offset + length;
 
     src->read_position += length;
+ 
+    // a hack for our mixer
+    // we need to know when a file is about to end 
+    if ( src->size>0 && (src->read_position!=src->size) &&
+         ((double)src->read_position/(double)src->size > .995 ) && 
+         ((double)src->read_position/(double)src->size < .998 ) ) // this can be a seek to the end
+    {
+       GstStructure *s = gst_structure_new ("kfilesrc",
+          "event", G_TYPE_STRING, "reaching end",
+          "filename", G_TYPE_STRING, src->filename,
+           NULL);
+
+       GstMessage *m = gst_message_new_element (GST_OBJECT (src), s);
+       gst_element_post_message (GST_ELEMENT (src), m);
+    }
   }
 
   *buffer = buf;
@@ -1014,6 +1029,7 @@ gst_kfilesrc_start (GstBaseSrc * basesrc)
 
   src->using_mmap = FALSE;
   src->read_position = 0;
+  src->size = stat_results.st_size;
 
   /* record if it's a regular (hence seekable and lengthable) file */
   if (S_ISREG (stat_results.st_mode))

@@ -61,6 +61,7 @@ struct _GstKFileSrc {
   gchar *uri;				/* caching the URI */
   gint fd;				/* open file descriptor */
   guint64 read_position;		/* position of fd */
+  guint64 size;		                /* file size */
 
   gboolean touch;			/* whether to touch every page */
   gboolean using_mmap;                  /* whether we opened it with mmap */
