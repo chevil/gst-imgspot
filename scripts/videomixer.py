@@ -387,12 +387,28 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'html')
             self.end_headers()
             return
-          mixer.hostname=params['hostname'][0]
-          mixer.audioport=int(params['audioport'][0])
-          mixer.videoport=int(params['videoport'][0])
           self.send_response(200, 'OK')
           self.send_header('Content-type', 'html')
           self.end_headers()
+          mixer.hostname=params['hostname'][0]
+          mixer.audioport=int(params['audioport'][0])
+          mixer.videoport=int(params['videoport'][0])
+          mixer.launch_pipe()
+	  #mixer.player.set_state(gst.STATE_PAUSED)
+
+        elif self.path == "/outputs/icestream":
+          if "hostname" not in params or "port" not in params or "mountpoint" not in params or "password" not in params:
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
+            return
+          self.send_response(200, 'OK')
+          self.send_header('Content-type', 'html')
+          self.end_headers()
+          mixer.icehost=params['hostname'][0]
+          mixer.iceport=int(params['port'][0])
+          mixer.icemount=params['mountpoint'][0]
+          mixer.icepass=params['password'][0]
           mixer.launch_pipe()
 	  #mixer.player.set_state(gst.STATE_PAUSED)
 
@@ -432,6 +448,12 @@ class Gst4chMixer:
 
                 self.recfile=""
                 self.hostname=""
+                self.audioport=""
+                self.videoport=""
+                self.icehost=""
+                self.iceport=""
+                self.icemount=""
+                self.icepass=""
                 self.uri=[]
                 self.xpos=[]
                 self.ypos=[]
@@ -527,10 +549,12 @@ class Gst4chMixer:
 
                 pipecmd = ""
 
-                if ( self.hostname != "" ):
+                if ( self.hostname != "" and self.icehost == "" ):
                     pipecmd += "gstrtpbin name=rtpbin "
 
-                if self.hostname != "" and nosound==False:
+                if self.icehost != "" and nosound==False:
+                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! vorbisenc ! queue ! mux. "
+                elif self.hostname != "" and nosound==False:
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
                 elif self.recfile != "" and nosound==False:
                     pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! queue ! mux. "
@@ -545,7 +569,9 @@ class Gst4chMixer:
                     else:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d sink_%d::ename=channel%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, self.zorder[i], i+1, self.owidth[i], i+1, self.oheight[i], i+1, i+1 )
 
-                if ( self.hostname != "" ):
+                if ( self.icehost != "" ):
+                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! theoraenc quality=5 ! queue ! mux. "
+                elif ( self.hostname != "" ):
                     pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
                 elif ( self.recfile != "" ):
                     pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. ! queue ! ffenc_mpeg4 ! queue ! mux. "
@@ -580,7 +606,9 @@ class Gst4chMixer:
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
 
-                if ( self.hostname != "" ):
+                if ( self.icehost != "" ):
+                    pipecmd += " oggmux name=mux ! queue ! shout2send ip=%s port=%d mount=/%s password=%s " % ( self.icehost, self.iceport, self.icemount, self.icepass );
+                elif ( self.hostname != "" ):
                     pipecmd += " rtpbin.send_rtp_src_0 ! udpsink host=%s port=%d ts-offset=0 name=vrtpsink rtpbin.send_rtcp_src_0 ! udpsink host=%s port=%d sync=false async=false name=vrtcpsink udpsrc port=%d name=vrtpsrc ! rtpbin.recv_rtcp_sink_0 " % ( self.hostname, self.videoport, self.hostname, self.videoport+1, self.videoport+5 )
                     if nosound==False:
                        pipecmd += " rtpbin.send_rtp_src_1 ! udpsink host=%s port=%d ts-offset=0 name=artpsink rtpbin.send_rtcp_src_1 ! udpsink host=%s port=%d sync=false async=false name=artcpsink udpsrc port=%d name=artpsrc ! rtpbin.recv_rtcp_sink_1 " % ( self.hostname, self.audioport, self.hostname, self.audioport+1, self.audioport+5 )
