@@ -193,8 +193,7 @@ libgstvideoscaledmixer_la-gstvideoscaledmixer.lo: gstvideoscaledmixer.c \
  /usr/include/gstreamer-0.10/gst/controller/gstcontroller.h \
  /usr/include/glib-2.0/glib/gprintf.h \
  /usr/include/gstreamer-0.10/gst/controller/gstcontrolsource.h \
- /usr/include/gstreamer-0.10/gst/controller/gstinterpolationcontrolsource.h \
- /usr/include/orc-0.4/orc/orcfunctions.h
+ /usr/include/gstreamer-0.10/gst/controller/gstinterpolationcontrolsource.h
 
 ../config.h:
 
@@ -661,5 +660,3 @@ videoscaledmixerpad.h:
 /usr/include/gstreamer-0.10/gst/controller/gstcontrolsource.h:
 
 /usr/include/gstreamer-0.10/gst/controller/gstinterpolationcontrolsource.h:
-
-/usr/include/orc-0.4/orc/orcfunctions.h:

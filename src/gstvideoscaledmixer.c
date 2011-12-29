@@ -94,11 +94,7 @@
 
 #include <gst/controller/gstcontroller.h>
 
-#ifdef DISABLE_ORC
 #define orc_memset memset
-#else
-#include <orc/orcfunctions.h>
-#endif
 
 GST_DEBUG_CATEGORY_STATIC (gst_videoscaledmixer_debug);
 #define GST_CAT_DEFAULT gst_videoscaledmixer_debug
@@ -1477,106 +1473,8 @@ gst_videoscaledmixer_src_setcaps (GstPad * pad, GstCaps * caps)
   mix->fps_d = fps_d;
   mix->par_n = par_n;
   mix->par_d = par_d;
+  ret = TRUE;
 
-  switch (mix->format) {
-    case GST_VIDEO_FORMAT_AYUV:
-      mix->blend = gst_video_mixer_blend_ayuv;
-      mix->overlay = gst_video_mixer_overlay_ayuv;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_ARGB:
-      mix->blend = gst_video_mixer_blend_argb;
-      mix->overlay = gst_video_mixer_overlay_argb;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_BGRA:
-      mix->blend = gst_video_mixer_blend_bgra;
-      mix->overlay = gst_video_mixer_overlay_bgra;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_ABGR:
-      mix->blend = gst_video_mixer_blend_abgr;
-      mix->overlay = gst_video_mixer_overlay_abgr;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_RGBA:
-      mix->blend = gst_video_mixer_blend_rgba;
-      mix->overlay = gst_video_mixer_overlay_rgba;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_Y444:
-      mix->blend = gst_video_mixer_blend_y444;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_Y42B:
-      mix->blend = gst_video_mixer_blend_y42b;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_YUY2:
-      mix->blend = gst_video_mixer_blend_yuy2;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_UYVY:
-      mix->blend = gst_video_mixer_blend_uyvy;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_YVYU:
-      mix->blend = gst_video_mixer_blend_yvyu;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_I420:
-      mix->blend = gst_video_mixer_blend_i420;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_YV12:
-      mix->blend = gst_video_mixer_blend_yv12;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_Y41B:
-      mix->blend = gst_video_mixer_blend_y41b;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_RGB:
-      mix->blend = gst_video_mixer_blend_rgb;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_BGR:
-      mix->blend = gst_video_mixer_blend_bgr;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_xRGB:
-      mix->blend = gst_video_mixer_blend_xrgb;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_xBGR:
-      mix->blend = gst_video_mixer_blend_xbgr;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_RGBx:
-      mix->blend = gst_video_mixer_blend_rgbx;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    case GST_VIDEO_FORMAT_BGRx:
-      mix->blend = gst_video_mixer_blend_bgrx;
-      mix->overlay = mix->blend;
-      ret = TRUE;
-      break;
-    default:
-      break;
-  }
   GST_VIDEOSCALED_MIXER_UNLOCK (mix);
 
 done:
@@ -2013,8 +1911,9 @@ plugin_init (GstPlugin * plugin)
 {
   if (!gst_videoscaledmixer_register(plugin))
     return FALSE;
-
-  gst_video_mixer_init_blend ();
+  
+  // we don't use the blending functions at all
+  // gst_video_mixer_init_blend ();
 
   return TRUE;
 }
