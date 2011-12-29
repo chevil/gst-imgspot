@@ -303,7 +303,6 @@ gst_audio_buffer_clip (GstBuffer * buffer, GstSegment * segment, gint rate,
   gboolean change_duration = TRUE, change_offset = TRUE, change_offset_end =
       TRUE;
 
-  printf ( "yoohoo" );
   if (segment->format != GST_FORMAT_TIME &&
       segment->format != GST_FORMAT_DEFAULT) 
   {
