@@ -68,6 +68,22 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(plugindir)"
 LTLIBRARIES = $(plugin_LTLIBRARIES)
 am__DEPENDENCIES_1 =
+libgstaudio_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_libgstaudio_la_OBJECTS = libgstaudio_la-audio.lo \
+	libgstaudio_la-gstringbuffer.lo \
+	libgstaudio_la-gstaudioclock.lo libgstaudio_la-mixerutils.lo \
+	libgstaudio_la-multichannel.lo \
+	libgstaudio_la-gstbaseaudiosink.lo \
+	libgstaudio_la-gstbaseaudiosrc.lo \
+	libgstaudio_la-gstaudiofilter.lo \
+	libgstaudio_la-gstaudiosink.lo libgstaudio_la-gstaudiosrc.lo \
+	libgstaudio_la-audio-enumtypes.lo
+libgstaudio_la_OBJECTS = $(am_libgstaudio_la_OBJECTS)
+libgstaudio_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libgstaudio_la_CFLAGS) \
+	$(CFLAGS) $(libgstaudio_la_LDFLAGS) $(LDFLAGS) -o $@
 libgstimgspot_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
@@ -112,9 +128,10 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libgstimgspot_la_SOURCES) $(libgstkfilesrc_la_SOURCES) \
+SOURCES = $(libgstaudio_la_SOURCES) $(libgstimgspot_la_SOURCES) \
+	$(libgstkfilesrc_la_SOURCES) \
 	$(libgstvideoscaledmixer_la_SOURCES)
-DIST_SOURCES = $(libgstimgspot_la_SOURCES) \
+DIST_SOURCES = $(libgstaudio_la_SOURCES) $(libgstimgspot_la_SOURCES) \
 	$(libgstkfilesrc_la_SOURCES) \
 	$(libgstvideoscaledmixer_la_SOURCES)
 ETAGS = etags
@@ -157,7 +174,7 @@ GSTPB_BASE_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -
 GST_BASE_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gstreamer-0.10 -I/usr/include/libxml2  
 GST_BASE_LIBS = -pthread -lgstbase-0.10 -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0  
 GST_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gstreamer-0.10 -I/usr/include/libxml2  
-GST_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0   -lgstvideo-0.10 -lgstcontroller-0.10
+GST_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0   -lgstcontroller-0.10 -lgstbase-0.10 -lgstvideo-0.10 -lgstinterfaces-0.10
 GST_MAJORMINOR = 0.10
 GST_PLUGIN_LDFLAGS = -module -avoid-version -export-symbols-regex _*\(gst_\|Gst\|GST_\).*
 HAVE_PKGCONFIG = yes
@@ -258,12 +275,13 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la libgstvideoscaledmixer.la
+plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la libgstvideoscaledmixer.la libgstaudio.la
 
 # sources used to compile this plug-in
 libgstimgspot_la_SOURCES = gstimgspot.c
 libgstkfilesrc_la_SOURCES = gstkfilesrc.c
 libgstvideoscaledmixer_la_SOURCES = gstvideoscaledmixer.c blend.c blendorc.c gstcollectpads2.c
+libgstaudio_la_SOURCES = audio.c gstringbuffer.c gstaudioclock.c mixerutils.c multichannel.c gstbaseaudiosink.c gstbaseaudiosrc.c gstaudiofilter.c gstaudiosink.c gstaudiosrc.c audio-enumtypes.c
 libgstimgspot_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstimgspot_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstimgspot_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
@@ -273,6 +291,9 @@ libgstkfilesrc_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 libgstvideoscaledmixer_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstvideoscaledmixer_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstvideoscaledmixer_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+libgstaudio_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
+libgstaudio_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
+libgstaudio_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -338,6 +359,8 @@ clean-pluginLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+libgstaudio.la: $(libgstaudio_la_OBJECTS) $(libgstaudio_la_DEPENDENCIES) 
+	$(libgstaudio_la_LINK) -rpath $(plugindir) $(libgstaudio_la_OBJECTS) $(libgstaudio_la_LIBADD) $(LIBS)
 libgstimgspot.la: $(libgstimgspot_la_OBJECTS) $(libgstimgspot_la_DEPENDENCIES) 
 	$(libgstimgspot_la_LINK) -rpath $(plugindir) $(libgstimgspot_la_OBJECTS) $(libgstimgspot_la_LIBADD) $(LIBS)
 libgstkfilesrc.la: $(libgstkfilesrc_la_OBJECTS) $(libgstkfilesrc_la_DEPENDENCIES) 
@@ -351,6 +374,17 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+include ./$(DEPDIR)/libgstaudio_la-audio-enumtypes.Plo
+include ./$(DEPDIR)/libgstaudio_la-audio.Plo
+include ./$(DEPDIR)/libgstaudio_la-gstaudioclock.Plo
+include ./$(DEPDIR)/libgstaudio_la-gstaudiofilter.Plo
+include ./$(DEPDIR)/libgstaudio_la-gstaudiosink.Plo
+include ./$(DEPDIR)/libgstaudio_la-gstaudiosrc.Plo
+include ./$(DEPDIR)/libgstaudio_la-gstbaseaudiosink.Plo
+include ./$(DEPDIR)/libgstaudio_la-gstbaseaudiosrc.Plo
+include ./$(DEPDIR)/libgstaudio_la-gstringbuffer.Plo
+include ./$(DEPDIR)/libgstaudio_la-mixerutils.Plo
+include ./$(DEPDIR)/libgstaudio_la-multichannel.Plo
 include ./$(DEPDIR)/libgstimgspot_la-gstimgspot.Plo
 include ./$(DEPDIR)/libgstkfilesrc_la-gstkfilesrc.Plo
 include ./$(DEPDIR)/libgstvideoscaledmixer_la-blend.Plo
@@ -378,6 +412,83 @@ include ./$(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Plo
 #	source='$<' object='$@' libtool=yes \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(LTCOMPILE) -c -o $@ $<
+
+libgstaudio_la-audio.lo: audio.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-audio.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-audio.Tpo -c -o libgstaudio_la-audio.lo `test -f 'audio.c' || echo '$(srcdir)/'`audio.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-audio.Tpo $(DEPDIR)/libgstaudio_la-audio.Plo
+#	source='audio.c' object='libgstaudio_la-audio.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-audio.lo `test -f 'audio.c' || echo '$(srcdir)/'`audio.c
+
+libgstaudio_la-gstringbuffer.lo: gstringbuffer.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-gstringbuffer.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-gstringbuffer.Tpo -c -o libgstaudio_la-gstringbuffer.lo `test -f 'gstringbuffer.c' || echo '$(srcdir)/'`gstringbuffer.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-gstringbuffer.Tpo $(DEPDIR)/libgstaudio_la-gstringbuffer.Plo
+#	source='gstringbuffer.c' object='libgstaudio_la-gstringbuffer.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-gstringbuffer.lo `test -f 'gstringbuffer.c' || echo '$(srcdir)/'`gstringbuffer.c
+
+libgstaudio_la-gstaudioclock.lo: gstaudioclock.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-gstaudioclock.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-gstaudioclock.Tpo -c -o libgstaudio_la-gstaudioclock.lo `test -f 'gstaudioclock.c' || echo '$(srcdir)/'`gstaudioclock.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-gstaudioclock.Tpo $(DEPDIR)/libgstaudio_la-gstaudioclock.Plo
+#	source='gstaudioclock.c' object='libgstaudio_la-gstaudioclock.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-gstaudioclock.lo `test -f 'gstaudioclock.c' || echo '$(srcdir)/'`gstaudioclock.c
+
+libgstaudio_la-mixerutils.lo: mixerutils.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-mixerutils.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-mixerutils.Tpo -c -o libgstaudio_la-mixerutils.lo `test -f 'mixerutils.c' || echo '$(srcdir)/'`mixerutils.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-mixerutils.Tpo $(DEPDIR)/libgstaudio_la-mixerutils.Plo
+#	source='mixerutils.c' object='libgstaudio_la-mixerutils.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-mixerutils.lo `test -f 'mixerutils.c' || echo '$(srcdir)/'`mixerutils.c
+
+libgstaudio_la-multichannel.lo: multichannel.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-multichannel.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-multichannel.Tpo -c -o libgstaudio_la-multichannel.lo `test -f 'multichannel.c' || echo '$(srcdir)/'`multichannel.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-multichannel.Tpo $(DEPDIR)/libgstaudio_la-multichannel.Plo
+#	source='multichannel.c' object='libgstaudio_la-multichannel.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-multichannel.lo `test -f 'multichannel.c' || echo '$(srcdir)/'`multichannel.c
+
+libgstaudio_la-gstbaseaudiosink.lo: gstbaseaudiosink.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-gstbaseaudiosink.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-gstbaseaudiosink.Tpo -c -o libgstaudio_la-gstbaseaudiosink.lo `test -f 'gstbaseaudiosink.c' || echo '$(srcdir)/'`gstbaseaudiosink.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-gstbaseaudiosink.Tpo $(DEPDIR)/libgstaudio_la-gstbaseaudiosink.Plo
+#	source='gstbaseaudiosink.c' object='libgstaudio_la-gstbaseaudiosink.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-gstbaseaudiosink.lo `test -f 'gstbaseaudiosink.c' || echo '$(srcdir)/'`gstbaseaudiosink.c
+
+libgstaudio_la-gstbaseaudiosrc.lo: gstbaseaudiosrc.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-gstbaseaudiosrc.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-gstbaseaudiosrc.Tpo -c -o libgstaudio_la-gstbaseaudiosrc.lo `test -f 'gstbaseaudiosrc.c' || echo '$(srcdir)/'`gstbaseaudiosrc.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-gstbaseaudiosrc.Tpo $(DEPDIR)/libgstaudio_la-gstbaseaudiosrc.Plo
+#	source='gstbaseaudiosrc.c' object='libgstaudio_la-gstbaseaudiosrc.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-gstbaseaudiosrc.lo `test -f 'gstbaseaudiosrc.c' || echo '$(srcdir)/'`gstbaseaudiosrc.c
+
+libgstaudio_la-gstaudiofilter.lo: gstaudiofilter.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-gstaudiofilter.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-gstaudiofilter.Tpo -c -o libgstaudio_la-gstaudiofilter.lo `test -f 'gstaudiofilter.c' || echo '$(srcdir)/'`gstaudiofilter.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-gstaudiofilter.Tpo $(DEPDIR)/libgstaudio_la-gstaudiofilter.Plo
+#	source='gstaudiofilter.c' object='libgstaudio_la-gstaudiofilter.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-gstaudiofilter.lo `test -f 'gstaudiofilter.c' || echo '$(srcdir)/'`gstaudiofilter.c
+
+libgstaudio_la-gstaudiosink.lo: gstaudiosink.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-gstaudiosink.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-gstaudiosink.Tpo -c -o libgstaudio_la-gstaudiosink.lo `test -f 'gstaudiosink.c' || echo '$(srcdir)/'`gstaudiosink.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-gstaudiosink.Tpo $(DEPDIR)/libgstaudio_la-gstaudiosink.Plo
+#	source='gstaudiosink.c' object='libgstaudio_la-gstaudiosink.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-gstaudiosink.lo `test -f 'gstaudiosink.c' || echo '$(srcdir)/'`gstaudiosink.c
+
+libgstaudio_la-gstaudiosrc.lo: gstaudiosrc.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-gstaudiosrc.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-gstaudiosrc.Tpo -c -o libgstaudio_la-gstaudiosrc.lo `test -f 'gstaudiosrc.c' || echo '$(srcdir)/'`gstaudiosrc.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-gstaudiosrc.Tpo $(DEPDIR)/libgstaudio_la-gstaudiosrc.Plo
+#	source='gstaudiosrc.c' object='libgstaudio_la-gstaudiosrc.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-gstaudiosrc.lo `test -f 'gstaudiosrc.c' || echo '$(srcdir)/'`gstaudiosrc.c
+
+libgstaudio_la-audio-enumtypes.lo: audio-enumtypes.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -MT libgstaudio_la-audio-enumtypes.lo -MD -MP -MF $(DEPDIR)/libgstaudio_la-audio-enumtypes.Tpo -c -o libgstaudio_la-audio-enumtypes.lo `test -f 'audio-enumtypes.c' || echo '$(srcdir)/'`audio-enumtypes.c
+	$(am__mv) $(DEPDIR)/libgstaudio_la-audio-enumtypes.Tpo $(DEPDIR)/libgstaudio_la-audio-enumtypes.Plo
+#	source='audio-enumtypes.c' object='libgstaudio_la-audio-enumtypes.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstaudio_la_CFLAGS) $(CFLAGS) -c -o libgstaudio_la-audio-enumtypes.lo `test -f 'audio-enumtypes.c' || echo '$(srcdir)/'`audio-enumtypes.c
 
 libgstimgspot_la-gstimgspot.lo: gstimgspot.c
 	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstimgspot_la_CFLAGS) $(CFLAGS) -MT libgstimgspot_la-gstimgspot.lo -MD -MP -MF $(DEPDIR)/libgstimgspot_la-gstimgspot.Tpo -c -o libgstimgspot_la-gstimgspot.lo `test -f 'gstimgspot.c' || echo '$(srcdir)/'`gstimgspot.c

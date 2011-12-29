@@ -17,7 +17,7 @@ old_library='libgstvideoscaledmixer.a'
 inherited_linker_flags=' -pthread'
 
 # Libraries that this one depends upon.
-dependency_libs=' -lgstvideo-0.10 /usr/lib/libgstcontroller-0.10.la /usr/lib/libgstbase-0.10.la /usr/lib/libgstreamer-0.10.la -lgobject-2.0 -lgmodule-2.0 /usr/lib/libxml2.la -lgthread-2.0 -lrt -lglib-2.0 -lml -lcvaux -lhighgui -lcv -lcxcore -lorc-0.4'
+dependency_libs=' /usr/lib/libgstcontroller-0.10.la -lgstvideo-0.10 -lgstinterfaces-0.10 /usr/lib/libgstbase-0.10.la /usr/lib/libgstreamer-0.10.la -lgobject-2.0 -lgmodule-2.0 /usr/lib/libxml2.la -lgthread-2.0 -lrt -lglib-2.0 -lml -lcvaux -lhighgui -lcv -lcxcore -lorc-0.4'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''

@@ -35,7 +35,7 @@ fi
 
 dnl make GST_CFLAGS and GST_LIBS available
 AC_SUBST(GST_CFLAGS)
-GST_LIBS="$GST_LIBS -lgstvideo-0.10 -lgstcontroller-0.10"
+GST_LIBS="$GST_LIBS -lgstcontroller-0.10 -lgstbase-0.10 -lgstvideo-0.10 -lgstinterfaces-0.10"
 AC_SUBST(GST_LIBS)
 
 dnl make GST_MAJORMINOR available in Makefile.am

@@ -321,8 +321,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             if res:
                print "setting new stream time to 0"
                mixer.player.set_new_stream_time(0L)
-            else:
-               print "seek to 0 failed"
+	       mixer.player.set_state(gst.STATE_PLAYING)
 
         elif self.path == "/inputs/load":
           if "channel" not in params or "url" not in params:
