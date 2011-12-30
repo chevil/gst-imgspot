@@ -625,6 +625,7 @@ class Gst4chMixer:
 		if self.player != None : 
                    self.player.set_state(gst.STATE_NULL)
 		self.player = gst.parse_launch ( pipecmd )
+                self.starttime = time.time()
 
                 #self.window.resize(self.txsize, self.tysize)
 
