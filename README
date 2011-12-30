@@ -15,6 +15,7 @@ To use it on Ubuntu, first install the dependencies (on maverick) :
 
 Then compile the plugins with :
 
+> sudo ./autogen.sh
 > sudo ./configure --prefix=/usr
 > sudo make
 > sudo make install

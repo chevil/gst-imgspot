@@ -588,9 +588,9 @@ class Gst4chMixer:
                          detectstring = ""
 
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
                          if nosound==False: 
-                            pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
+                            pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
 
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src name=v4l2src%d device=%s ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
@@ -598,12 +598,12 @@ class Gst4chMixer:
                        if self.uri[i][:7] == "http://":
                          pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
-                            pipecmd += " decodebin%d. ! audiomix. " % ( i+1 ) 
+                            pipecmd += " decodebin%d. ! audioresample ! audiomix. " % ( i+1 ) 
 
                        if self.uri[i][:7] == "rtsp://":
                          pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
                          if nosound==False: 
-                            pipecmd += " decodebin%d. ! audiomix. "  % ( i+1 )
+                            pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
 
                 if ( self.icehost != "" ):
                     pipecmd += " oggmux name=mux ! queue ! shout2send ip=%s port=%d mount=/%s password=%s " % ( self.icehost, self.iceport, self.icemount, self.icepass );
