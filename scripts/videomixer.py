@@ -121,7 +121,6 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     return
             if ( channel < 0 or channel >= nbchannels ):
-               print "adding %s on channel %d" % ( newsource, channel )
                self.send_response(400, 'Bad request')
                self.send_header('Content-type', 'html')
                self.end_headers()
@@ -319,7 +318,6 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             # try the seek
             res = mixer.player.send_event(event)
             if res:
-               print "setting new stream time to 0"
                mixer.player.set_new_stream_time(0L)
 	       mixer.player.set_state(gst.STATE_PLAYING)
 
@@ -509,6 +507,7 @@ class Gst4chMixer:
 
 		if t == gst.MESSAGE_EOS:
                    print "end of stream received"
+                   sys.stdout.flush()
                   
                 elif t == gst.MESSAGE_ELEMENT:
                    st = message.structure
@@ -517,9 +516,11 @@ class Gst4chMixer:
                       gm = time.gmtime(self.curtime-self.starttime)
                       stime = "%.2d:%.2d:%.2d" % ( gm.tm_hour, gm.tm_min, gm.tm_sec )
                       print "imgspot : %s : image spotted : %s at %s (score=%d)" % (st["algorithm"], st["name"], stime, st["score"])
+                      sys.stdout.flush()
 
                    elif st.get_name() == "kfilesrc":
                       print "soon end of video : %s" % ( st["filename"] )
+                      sys.stdout.flush()
                       # clear up that video and relaunch the pipe
                       # this shouldn't affect the RTP streaming
                       for i in range(0, nbchannels):
@@ -530,6 +531,7 @@ class Gst4chMixer:
 		elif t == gst.MESSAGE_ERROR:
 			err, debug = message.parse_error()
 			print "Gst4chMixer : error: %s" % err
+                        sys.stdout.flush()
 
         def on_sync_message(self, bus, message):
                 if message.structure is None:
@@ -621,6 +623,7 @@ class Gst4chMixer:
                     pipecmd += " avimux name=mux ! filesink location=%s-%.2d-%.2d-%.2d:%.2d:%.2d.%s " % ( basename, now.month, now.day, now.hour, now.minute, now.second, extension );
 
                 print pipecmd
+                sys.stdout.flush()
 
 		if self.player != None : 
                    self.player.set_state(gst.STATE_NULL)
