@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# usage : python videomixer.py 3 640 480 <nosound>
+# usage : python videomixer.py 3 640 480 [nosound] [novideo]
 # this script is a nth channel video mixer 
 # you set the number of channel by passing it as argument
 # you also pass as arguments the width and height of the mix
@@ -481,15 +481,16 @@ class Gst4chMixer:
                 self.txsize=gwidth
                 self.tysize=gheight
 
-                self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-                self.window.set_title("videomixer.py")
-                self.window.connect("destroy", gtk.main_quit, "WM destroy")
-                self.window.set_default_size(self.txsize, self.tysize)
-                vbox = gtk.VBox()
-                self.window.add(vbox)
-                self.movie_window = gtk.DrawingArea()
-                vbox.add(self.movie_window)
-                self.window.show_all()
+                if novideo==False: 
+                  self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+                  self.window.set_title("videomixer.py")
+                  self.window.connect("destroy", gtk.main_quit, "WM destroy")
+                  self.window.set_default_size(self.txsize, self.tysize)
+                  vbox = gtk.VBox()
+                  self.window.add(vbox)
+                  self.movie_window = gtk.DrawingArea()
+                  vbox.add(self.movie_window)
+                  self.window.show_all()
 
                 self.player = None
                 self.launch_pipe()
@@ -571,13 +572,25 @@ class Gst4chMixer:
                        pipecmd += "sink_%d::xpos=%d sink_%d::ypos=%d sink_%d::alpha=0 sink_%d::zorder=%d sink_%d::width=%d sink_%d::height=%d sink_%d::ename=channel%d " % ( i+1, self.xpos[i], i+1, self.ypos[i], i+1, i+1, self.zorder[i], i+1, self.owidth[i], i+1, self.oheight[i], i+1, i+1 )
 
                 if ( self.icehost != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! theoraenc quality=5 ! queue ! mux. "
+                    if novideo==False:
+                       pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! theoraenc quality=5 ! queue ! mux. "
+                    else:
+                       pipecmd += "! tee name=vidmixout ! queue leaky=1 ! fakesink sync=false vidmixout. ! queue leaky=1 ! theoraenc quality=5 ! queue ! mux. "
                 elif ( self.hostname != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
+                    if novideo==False:
+                       pipecmd += "! tee name=vidmixout ! queue leaky=1 ! xvimagesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
+                    else:
+                       pipecmd += "! tee name=vidmixout ! queue leaky=1 ! fakesink sync=false vidmixout. ! queue leaky=1 ! x264enc ! queue ! rtph264pay ! rtpbin.send_rtp_sink_0 "
                 elif ( self.recfile != "" ):
-                    pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. ! queue ! ffenc_mpeg4 ! queue ! mux. "
+                    if novideo==False:
+                       pipecmd += "! tee name=vidmixout ! queue ! xvimagesink sync=false vidmixout. ! queue ! ffenc_mpeg4 ! queue ! mux. "
+                    else:
+                       pipecmd += "! tee name=vidmixout ! queue ! fakesink sync=false vidmixout. ! queue ! ffenc_mpeg4 ! queue ! mux. "
                 else:
-                    pipecmd += "! autovideosink "
+                    if novideo==False:
+                       pipecmd += "! autovideosink "
+                    else:
+                       pipecmd += "! fakesink "
 
                 pipecmd += "videotestsrc pattern=black name=background ! video/x-raw-yuv,width=%d,height=%d,format=(fourcc)I420,framerate=(fraction)15/1 ! mix.sink_0 " % ( self.txsize, self.tysize );
 
@@ -649,9 +662,10 @@ def main(args):
     global gwidth
     global gheight
     global nosound
+    global novideo
 
     def usage():
-        sys.stderr.write("usage: %s <nbchannels> <width> <height> [nosound]\n" % args[0])
+        sys.stderr.write("usage: %s <nbchannels> <width> <height> [nosound] [novideo]\n" % args[0])
         sys.exit(1)
 
     if len(args) < 4:
@@ -660,10 +674,14 @@ def main(args):
     nbchannels = int(args[1])
     gwidth = int(args[2])
     gheight = int(args[3])
-    if len(args)==5:
+    if len(args)>=5 and args[4]=='nosound':
       nosound=True 
     else:
       nosound=False
+    if len(args)>=5 and args[4]=='novideo':
+      novideo=True 
+    else:
+      novideo=False
 
     # build the window
     mixer = Gst4chMixer()

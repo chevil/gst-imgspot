@@ -4,7 +4,7 @@
 # all the commands refered her are in ./scripts
 
 #  --------------------- USAGE -------------------------------------------------------------
-# usage : python videomixer.py 3 640 480 <nosound>
+# usage : python videomixer.py 3 640 480 [nosound] [novideo]
 # this script is a nth channel video mixer
 # you set the number of channel by passing it as argument
 # you also pass as arguments the width and height of the mix
