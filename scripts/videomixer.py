@@ -84,7 +84,7 @@
 
 #  -------------------------- THAT's ALL for NOW --------------------------------------------
 
-import sys, os, time, threading, thread
+import sys, os, time, threading, thread, commands
 import pygtk, gtk, gobject
 import pygst
 import cgi
@@ -125,10 +125,51 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.send_header('Content-type', 'html')
                self.end_headers()
                return
+
+            #check if the source exists
+            if newsource[:7] == "file://":
+               if (not os.path.exists(newsource[7:]) ): 
+                 self.send_response(400, 'Bad request')
+                 self.send_header('Content-type', 'html')
+                 self.end_headers()
+                 return
+
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
+
             mixer.uri[channel]=newsource
+            #determine the size of the source
+            if mixer.uri[channel][:7] == "file://":
+             if os.path.exists('/usr/bin/ffprobe'):
+               cmd = "ffprobe -show_streams %s 2>&1 | grep width" % ( mixer.uri[channel][7:] )
+               fwidth = commands.getoutput(cmd)
+               widths = fwidth.split('=')
+               #print "Video width %s" % widths[1];
+               mixer.width[channel]=int(widths[1]) 
+               mixer.owidth[channel]=int(widths[1]) 
+               cmd = "ffprobe -show_streams %s 2>&1 | grep height" % ( mixer.uri[channel][7:] )
+               fheight = commands.getoutput(cmd)
+               heights = fheight.split('=')
+               #print "Video height %s" % heights[1];
+               mixer.height[channel]=int(heights[1])
+               mixer.oheight[channel]=int(heights[1])
+             else:
+               print "warning : cannot detect video size ( is ffmpeg installed ?)"
+
+            if mixer.uri[channel][:9] == "device://":
+             if os.path.exists('/usr/bin/v4l2-ctl'):
+               cmd = "/usr/bin/v4l2-ctl --all -d %s | grep -i width | awk '{print $3}'" % ( mixer.uri[channel][9:] )
+               size = commands.getoutput(cmd)
+               sizes = size.split('\n');
+               sizess = sizes[0].split('/');
+               mixer.width[channel]=int(sizess[0]) 
+               mixer.owidth[channel]=int(sizess[0]) 
+               mixer.height[channel]=int(sizess[1])
+               mixer.oheight[channel]=int(sizess[1])
+             else:
+               print "warning : cannot detect camera size ( is v4l-utils installed ?)"
+
             mixer.launch_pipe()
 	    #mixer.player.set_state(gst.STATE_PAUSED)
 
