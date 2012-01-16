@@ -84,7 +84,7 @@
 
 #  -------------------------- THAT's ALL for NOW --------------------------------------------
 
-import sys, os, time, threading, thread, commands
+import sys, os, time, threading, thread, commands, subprocess, re
 import pygtk, gtk, gobject
 import pygst
 import cgi
@@ -134,15 +134,15 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                  self.end_headers()
                  return
 
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
-
-            mixer.uri[channel]=newsource
             #determine the size of the source
-            if mixer.uri[channel][:7] == "file://":
+            if newsource[:7] == "file://":
+             mixer.uri[channel]=newsource
+             self.send_response(200, 'OK')
+             self.send_header('Content-type', 'html')
+             self.end_headers()
+
              if os.path.exists('/usr/bin/ffprobe'):
-               cmd = "ffprobe -show_streams %s 2>&1 | grep width" % ( mixer.uri[channel][7:] )
+               cmd = "/usr/bin/ffprobe -show_streams %s 2>&1 | grep width" % ( mixer.uri[channel][7:] )
                fwidth = commands.getoutput(cmd)
                widths = fwidth.split('=')
                #print "Video width %s" % widths[1];
@@ -157,18 +157,92 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
              else:
                print "warning : cannot detect video size ( is ffmpeg installed ?)"
 
-            if mixer.uri[channel][:9] == "device://":
+            if newsource[:9] == "device://":
              if os.path.exists('/usr/bin/v4l2-ctl'):
-               cmd = "/usr/bin/v4l2-ctl --all -d %s | grep -i width | awk '{print $3}'" % ( mixer.uri[channel][9:] )
+               cmd = "/usr/bin/v4l2-ctl --all -d %s | grep -i width | awk '{print $3}'" % ( newsource[9:] )
                size = commands.getoutput(cmd)
                sizes = size.split('\n');
                sizess = sizes[0].split('/');
-               mixer.width[channel]=int(sizess[0]) 
-               mixer.owidth[channel]=int(sizess[0]) 
-               mixer.height[channel]=int(sizess[1])
-               mixer.oheight[channel]=int(sizess[1])
+               if sizess[1] != 'dev':
+                 self.send_response(200, 'OK')
+                 self.send_header('Content-type', 'html')
+                 self.end_headers()
+                 mixer.uri[channel]=newsource
+                 mixer.width[channel]=int(sizess[0]) 
+                 mixer.owidth[channel]=int(sizess[0]) 
+                 mixer.height[channel]=int(sizess[1])
+                 mixer.oheight[channel]=int(sizess[1])
+               else:
+                 self.send_response(400, 'Bad request')
+                 self.send_header('Content-type', 'html')
+                 self.end_headers()
+                 return
              else:
                print "warning : cannot detect camera size ( is v4l-utils installed ?)"
+               self.send_response(400, 'Bad request')
+               self.send_header('Content-type', 'html')
+               self.end_headers()
+               return
+
+            if newsource[:7] == "rtsp://":
+             if os.path.exists('/usr/bin/mplayer'):
+               process = subprocess.Popen(['/usr/bin/mplayer','-endpos','1','-vo','null', '-nosound', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+               streamis=False
+               for line in process.stdout:
+                  p = re.compile('VO')
+                  if p.match( line ):
+                    sizes=line.split(' '); 
+                    wihe=sizes[2].split('x'); 
+                    mixer.uri[channel]=newsource
+                    mixer.width[channel]=int(wihe[0]) 
+                    mixer.owidth[channel]=int(wihe[0]) 
+                    mixer.height[channel]=int(wihe[1])
+                    mixer.oheight[channel]=int(wihe[1])
+                    self.send_response(200, 'OK')
+                    self.send_header('Content-type', 'html')
+                    self.end_headers()
+                    streamis=True
+               if not streamis:
+                    self.send_response(400, 'Bad request')
+                    self.send_header('Content-type', 'html')
+                    self.end_headers()
+                    return
+             else:
+               print "warning : cannot detect stream size ( is mplayer installed ?)"
+               self.send_response(400, 'Bad request')
+               self.send_header('Content-type', 'html')
+               self.end_headers()
+               return
+
+            if newsource[:7] == "http://":
+             if os.path.exists('/usr/bin/mplayer'):
+               process = subprocess.Popen(['/usr/bin/mplayer','-endpos','1','-vo','null', '-nosound', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+               streamis=False
+               for line in process.stdout:
+                  p = re.compile('VO')
+                  if p.match( line ):
+                    sizes=line.split(' '); 
+                    wihe=sizes[2].split('x'); 
+                    mixer.uri[channel]=newsource
+                    mixer.width[channel]=int(wihe[0]) 
+                    mixer.owidth[channel]=int(wihe[0]) 
+                    mixer.height[channel]=int(wihe[1])
+                    mixer.oheight[channel]=int(wihe[1])
+                    self.send_response(200, 'OK')
+                    self.send_header('Content-type', 'html')
+                    self.end_headers()
+                    streamis=True
+               if not streamis:
+                    self.send_response(400, 'Bad request')
+                    self.send_header('Content-type', 'html')
+                    self.end_headers()
+                    return
+             else:
+               print "warning : cannot detect remote video size ( is mplayer installed ?)"
+               self.send_response(400, 'Bad request')
+               self.send_header('Content-type', 'html')
+               self.end_headers()
+               return
 
             mixer.launch_pipe()
 	    #mixer.player.set_state(gst.STATE_PAUSED)
@@ -652,12 +726,12 @@ class Gst4chMixer:
                          pipecmd += " v4l2src name=v4l2src%d device=%s ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
 
                        if self.uri[i][:7] == "http://":
-                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! ffmpegcolorspace ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audioresample ! audiomix. " % ( i+1 ) 
 
                        if self.uri[i][:7] == "rtsp://":
-                         pipecmd += " rtspsrc location=\"%s\" ! decodebin name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " rtspsrc location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
 
