@@ -146,13 +146,11 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                fwidth = commands.getoutput(cmd)
                widths = fwidth.split('=')
                #print "Video width %s" % widths[1];
-               mixer.width[channel]=int(widths[1]) 
                mixer.owidth[channel]=int(widths[1]) 
                cmd = "ffprobe -show_streams %s 2>&1 | grep height" % ( mixer.uri[channel][7:] )
                fheight = commands.getoutput(cmd)
                heights = fheight.split('=')
                #print "Video height %s" % heights[1];
-               mixer.height[channel]=int(heights[1])
                mixer.oheight[channel]=int(heights[1])
              else:
                print "warning : cannot detect video size ( is ffmpeg installed ?)"
@@ -168,9 +166,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                  self.send_header('Content-type', 'html')
                  self.end_headers()
                  mixer.uri[channel]=newsource
-                 mixer.width[channel]=int(sizess[0]) 
                  mixer.owidth[channel]=int(sizess[0]) 
-                 mixer.height[channel]=int(sizess[1])
                  mixer.oheight[channel]=int(sizess[1])
                else:
                  self.send_response(400, 'Bad request')
@@ -194,9 +190,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                     sizes=line.split(' '); 
                     wihe=sizes[2].split('x'); 
                     mixer.uri[channel]=newsource
-                    mixer.width[channel]=int(wihe[0]) 
                     mixer.owidth[channel]=int(wihe[0]) 
-                    mixer.height[channel]=int(wihe[1])
                     mixer.oheight[channel]=int(wihe[1])
                     self.send_response(200, 'OK')
                     self.send_header('Content-type', 'html')
@@ -224,9 +218,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                     sizes=line.split(' '); 
                     wihe=sizes[2].split('x'); 
                     mixer.uri[channel]=newsource
-                    mixer.width[channel]=int(wihe[0]) 
                     mixer.owidth[channel]=int(wihe[0]) 
-                    mixer.height[channel]=int(wihe[1])
                     mixer.oheight[channel]=int(wihe[1])
                     self.send_response(200, 'OK')
                     self.send_header('Content-type', 'html')
