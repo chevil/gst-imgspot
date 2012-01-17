@@ -156,25 +156,25 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                print "warning : cannot detect video size ( is ffmpeg installed ?)"
 
             if newsource[:9] == "device://":
-             if os.path.exists('/usr/bin/v4l2-ctl'):
-               cmd = "/usr/bin/v4l2-ctl --all -d %s | grep -i width | awk '{print $3}'" % ( newsource[9:] )
-               size = commands.getoutput(cmd)
-               sizes = size.split('\n');
-               sizess = sizes[0].split('/');
-               if sizess[1] != 'dev':
+             if os.path.exists('/usr/bin/v4l-info'):
+               cmd = "/usr/bin/v4l-info %s 2>/dev/null | grep fmt.pix.width | awk '{print $3}'" % ( newsource[9:] )
+               width = commands.getoutput(cmd)
+               cmd = "/usr/bin/v4l-info %s 2>/dev/null | grep fmt.pix.height | awk '{print $3}'" % ( newsource[9:] )
+               height = commands.getoutput(cmd)
+               if width != '':
                  self.send_response(200, 'OK')
                  self.send_header('Content-type', 'html')
                  self.end_headers()
                  mixer.uri[channel]=newsource
-                 mixer.owidth[channel]=int(sizess[0]) 
-                 mixer.oheight[channel]=int(sizess[1])
+                 mixer.owidth[channel]=int(width) 
+                 mixer.oheight[channel]=int(height)
                else:
                  self.send_response(400, 'Bad request')
                  self.send_header('Content-type', 'html')
                  self.end_headers()
                  return
              else:
-               print "warning : cannot detect camera size ( is v4l-utils installed ?)"
+               print "warning : cannot detect camera size ( is v4l-conf installed ?)"
                self.send_response(400, 'Bad request')
                self.send_header('Content-type', 'html')
                self.end_headers()
