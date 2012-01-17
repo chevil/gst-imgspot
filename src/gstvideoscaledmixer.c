@@ -812,7 +812,6 @@ gst_videoscaledmixer_fill_queues (GstVideoScaledMixer * mix,
 
   if (need_more_data)
   {
-    printf( "video scaled mixer: need more data");
     return 0;
   }
   if (eos)
