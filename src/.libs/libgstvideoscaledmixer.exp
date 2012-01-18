@@ -23,6 +23,4 @@ gst_collect_pads2_start
 gst_collect_pads2_stop
 gst_collect_pads2_take_buffer
 gst_plugin_desc
-gst_videoscaledmixer_get_type
 gst_videoscaledmixer_pad_get_type
-gst_videoscaledmixer_register

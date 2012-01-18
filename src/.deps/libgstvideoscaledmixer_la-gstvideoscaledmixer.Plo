@@ -1,30 +1,26 @@
 libgstvideoscaledmixer_la-gstvideoscaledmixer.lo: gstvideoscaledmixer.c \
- ../config.h /usr/include/string.h /usr/include/features.h \
+ ../config.h /usr/include/gstreamer-0.10/gst/gst.h \
+ /usr/include/glib-2.0/glib.h /usr/include/glib-2.0/glib/galloca.h \
+ /usr/include/glib-2.0/glib/gtypes.h \
+ /usr/lib/x86_64-linux-gnu/glib-2.0/include/glibconfig.h \
+ /usr/include/glib-2.0/glib/gmacros.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.6/include/stddef.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/limits.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/syslimits.h \
+ /usr/include/limits.h /usr/include/features.h \
  /usr/include/x86_64-linux-gnu/bits/predefs.h \
  /usr/include/x86_64-linux-gnu/sys/cdefs.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
  /usr/include/x86_64-linux-gnu/gnu/stubs.h \
  /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
- /usr/lib/gcc/x86_64-linux-gnu/4.6/include/stddef.h \
- /usr/include/xlocale.h /usr/include/x86_64-linux-gnu/bits/string.h \
- /usr/include/x86_64-linux-gnu/bits/string2.h /usr/include/endian.h \
- /usr/include/x86_64-linux-gnu/bits/endian.h \
- /usr/include/x86_64-linux-gnu/bits/byteswap.h \
- /usr/include/x86_64-linux-gnu/bits/types.h \
- /usr/include/x86_64-linux-gnu/bits/typesizes.h /usr/include/stdlib.h \
- gstvideoscaledmixer.h /usr/include/gstreamer-0.10/gst/gst.h \
- /usr/include/glib-2.0/glib.h /usr/include/glib-2.0/glib/galloca.h \
- /usr/include/glib-2.0/glib/gtypes.h \
- /usr/lib/x86_64-linux-gnu/glib-2.0/include/glibconfig.h \
- /usr/include/glib-2.0/glib/gmacros.h \
- /usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/limits.h \
- /usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/syslimits.h \
- /usr/include/limits.h /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
+ /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
  /usr/include/x86_64-linux-gnu/bits/local_lim.h \
  /usr/include/linux/limits.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/float.h /usr/include/time.h \
  /usr/include/x86_64-linux-gnu/bits/time.h \
+ /usr/include/x86_64-linux-gnu/bits/types.h \
+ /usr/include/x86_64-linux-gnu/bits/typesizes.h /usr/include/xlocale.h \
  /usr/include/glib-2.0/glib/garray.h \
  /usr/include/glib-2.0/glib/gasyncqueue.h \
  /usr/include/glib-2.0/glib/gthread.h /usr/include/glib-2.0/glib/gerror.h \
@@ -123,8 +119,10 @@ libgstvideoscaledmixer_la-gstvideoscaledmixer.lo: gstvideoscaledmixer.c \
  /usr/include/libxml2/libxml/encoding.h /usr/include/iconv.h \
  /usr/include/libxml2/libxml/xmlIO.h \
  /usr/include/libxml2/libxml/globals.h /usr/include/libxml2/libxml/SAX.h \
- /usr/include/x86_64-linux-gnu/bits/waitflags.h \
- /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
+ /usr/include/stdlib.h /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+ /usr/include/x86_64-linux-gnu/bits/waitstatus.h /usr/include/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/byteswap.h \
  /usr/include/x86_64-linux-gnu/sys/types.h \
  /usr/include/x86_64-linux-gnu/sys/select.h \
  /usr/include/x86_64-linux-gnu/bits/select.h \
@@ -187,51 +185,18 @@ libgstvideoscaledmixer_la-gstvideoscaledmixer.lo: gstvideoscaledmixer.c \
  /usr/include/gstreamer-0.10/gst/gstparse.h \
  /usr/include/gstreamer-0.10/gst/gstxml.h \
  /usr/include/gstreamer-0.10/gst/gstcompat.h \
- /usr/include/gstreamer-0.10/gst/video/video.h \
- /usr/include/gstreamer-0.10/gst/video/video-enumtypes.h blend.h \
- gstcollectpads2.h videoscaledmixerpad.h \
+ /usr/include/gstreamer-0.10/gst/base/gstcollectpads.h \
  /usr/include/gstreamer-0.10/gst/controller/gstcontroller.h \
+ /usr/include/string.h /usr/include/x86_64-linux-gnu/bits/string.h \
+ /usr/include/x86_64-linux-gnu/bits/string2.h \
  /usr/include/glib-2.0/glib/gprintf.h \
  /usr/include/gstreamer-0.10/gst/controller/gstcontrolsource.h \
- /usr/include/gstreamer-0.10/gst/controller/gstinterpolationcontrolsource.h
+ /usr/include/gstreamer-0.10/gst/controller/gstinterpolationcontrolsource.h \
+ /usr/include/gstreamer-0.10/gst/video/video.h \
+ /usr/include/gstreamer-0.10/gst/video/video-enumtypes.h \
+ gstvideoscaledmixer.h videoscaledmixerpad.h
 
 ../config.h:
-
-/usr/include/string.h:
-
-/usr/include/features.h:
-
-/usr/include/x86_64-linux-gnu/bits/predefs.h:
-
-/usr/include/x86_64-linux-gnu/sys/cdefs.h:
-
-/usr/include/x86_64-linux-gnu/bits/wordsize.h:
-
-/usr/include/x86_64-linux-gnu/gnu/stubs.h:
-
-/usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
-
-/usr/lib/gcc/x86_64-linux-gnu/4.6/include/stddef.h:
-
-/usr/include/xlocale.h:
-
-/usr/include/x86_64-linux-gnu/bits/string.h:
-
-/usr/include/x86_64-linux-gnu/bits/string2.h:
-
-/usr/include/endian.h:
-
-/usr/include/x86_64-linux-gnu/bits/endian.h:
-
-/usr/include/x86_64-linux-gnu/bits/byteswap.h:
-
-/usr/include/x86_64-linux-gnu/bits/types.h:
-
-/usr/include/x86_64-linux-gnu/bits/typesizes.h:
-
-/usr/include/stdlib.h:
-
-gstvideoscaledmixer.h:
 
 /usr/include/gstreamer-0.10/gst/gst.h:
 
@@ -245,11 +210,25 @@ gstvideoscaledmixer.h:
 
 /usr/include/glib-2.0/glib/gmacros.h:
 
+/usr/lib/gcc/x86_64-linux-gnu/4.6/include/stddef.h:
+
 /usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/limits.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/syslimits.h:
 
 /usr/include/limits.h:
+
+/usr/include/features.h:
+
+/usr/include/x86_64-linux-gnu/bits/predefs.h:
+
+/usr/include/x86_64-linux-gnu/sys/cdefs.h:
+
+/usr/include/x86_64-linux-gnu/bits/wordsize.h:
+
+/usr/include/x86_64-linux-gnu/gnu/stubs.h:
+
+/usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
 
 /usr/include/x86_64-linux-gnu/bits/posix1_lim.h:
 
@@ -264,6 +243,12 @@ gstvideoscaledmixer.h:
 /usr/include/time.h:
 
 /usr/include/x86_64-linux-gnu/bits/time.h:
+
+/usr/include/x86_64-linux-gnu/bits/types.h:
+
+/usr/include/x86_64-linux-gnu/bits/typesizes.h:
+
+/usr/include/xlocale.h:
 
 /usr/include/glib-2.0/glib/garray.h:
 
@@ -505,9 +490,17 @@ gstvideoscaledmixer.h:
 
 /usr/include/libxml2/libxml/SAX.h:
 
+/usr/include/stdlib.h:
+
 /usr/include/x86_64-linux-gnu/bits/waitflags.h:
 
 /usr/include/x86_64-linux-gnu/bits/waitstatus.h:
+
+/usr/include/endian.h:
+
+/usr/include/x86_64-linux-gnu/bits/endian.h:
+
+/usr/include/x86_64-linux-gnu/bits/byteswap.h:
 
 /usr/include/x86_64-linux-gnu/sys/types.h:
 
@@ -643,20 +636,26 @@ gstvideoscaledmixer.h:
 
 /usr/include/gstreamer-0.10/gst/gstcompat.h:
 
-/usr/include/gstreamer-0.10/gst/video/video.h:
-
-/usr/include/gstreamer-0.10/gst/video/video-enumtypes.h:
-
-blend.h:
-
-gstcollectpads2.h:
-
-videoscaledmixerpad.h:
+/usr/include/gstreamer-0.10/gst/base/gstcollectpads.h:
 
 /usr/include/gstreamer-0.10/gst/controller/gstcontroller.h:
+
+/usr/include/string.h:
+
+/usr/include/x86_64-linux-gnu/bits/string.h:
+
+/usr/include/x86_64-linux-gnu/bits/string2.h:
 
 /usr/include/glib-2.0/glib/gprintf.h:
 
 /usr/include/gstreamer-0.10/gst/controller/gstcontrolsource.h:
 
 /usr/include/gstreamer-0.10/gst/controller/gstinterpolationcontrolsource.h:
+
+/usr/include/gstreamer-0.10/gst/video/video.h:
+
+/usr/include/gstreamer-0.10/gst/video/video-enumtypes.h:
+
+gstvideoscaledmixer.h:
+
+videoscaledmixerpad.h:

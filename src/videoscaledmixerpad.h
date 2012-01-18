@@ -1,6 +1,5 @@
-/* Generic video mixer plugin
+/* Video mixer pad
  * Copyright (C) 2008 Wim Taymans <wim@fluendo.com>
- * Copyright (C) 2010 Sebastian Dröge <sebastian.droege@collabora.co.uk>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -17,14 +16,12 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
- 
+
 #ifndef __GST_VIDEOSCALED_MIXER_PAD_H__
 #define __GST_VIDEOSCALED_MIXER_PAD_H__
 
 #include <gst/gst.h>
-#include <gst/video/video.h>
-
-#include "gstcollectpads2.h"
+#include <gst/base/gstcollectpads.h>
 
 G_BEGIN_DECLS
 
@@ -32,7 +29,7 @@ G_BEGIN_DECLS
 #define GST_VIDEOSCALED_MIXER_PAD(obj) \
         (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_VIDEOSCALED_MIXER_PAD, GstVideoScaledMixerPad))
 #define GST_VIDEOSCALED_MIXER_PAD_CLASS(klass) \
-        (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_VIDEO_MIXER_PAD, GstVideoScaledMixerPadClass))
+        (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_VIDEOSCALED_MIXER_PAD, GstVideoScaledMixerPadiClass))
 #define GST_IS_VIDEOSCALED_MIXER_PAD(obj) \
         (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_VIDEOSCALED_MIXER_PAD))
 #define GST_IS_VIDEOSCALED_MIXER_PAD_CLASS(klass) \
@@ -42,27 +39,33 @@ typedef struct _GstVideoScaledMixerPad GstVideoScaledMixerPad;
 typedef struct _GstVideoScaledMixerPadClass GstVideoScaledMixerPadClass;
 typedef struct _GstVideoScaledMixerCollect GstVideoScaledMixerCollect;
 
-/**
- * GstVideoScaledMixerPad:
- *
- * The opaque #GstVideoScaledMixerPad structure.
- */
+struct _GstVideoScaledMixerCollect
+{
+  GstCollectData collect;       /* we extend the CollectData */
+
+  GstBuffer *buffer;            /* the queued buffer for this pad */
+
+  GstVideoScaledMixerPad *mixpad;
+};
+
+/* all information needed for one video stream */
 struct _GstVideoScaledMixerPad
 {
-  GstPad parent;
+  GstPad parent;                /* subclass the pad */
 
-  /* < private > */
+  gint64 queued;
 
-  /* caps */
-  gint width, height;
+  guint in_width, in_height;
   gint owidth, oheight; // output width and height
   gchar *ename; // external name of the pad ( for python scripts )
   gint fps_n;
   gint fps_d;
+  gint par_n;
+  gint par_d;
 
-  /* properties */
   gint xpos, ypos;
   guint zorder;
+  gint blend_mode;
   gdouble alpha;
 
   GstVideoScaledMixerCollect *mixcol;
@@ -72,8 +75,6 @@ struct _GstVideoScaledMixerPadClass
 {
   GstPadClass parent_class;
 };
-
-GType gst_videoscaledmixer_pad_get_type (void);
 
 G_END_DECLS
 #endif /* __GST_VIDEOSCALED_MIXER_PAD_H__ */
