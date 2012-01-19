@@ -1,11 +1,6 @@
-/* Modified video mixer to resize every pad
- * before output
+/* Modified videoscaledmixer to be able to resize each component
  * Copyright (C) 2012 Yves Degoyon <ydegoyon@gmail.com>
- * Made for the special needs of Kognate ( Rebus Man )
- * Only works in I420 video format
-
- * Generic video mixer plugin
- * Copyright (C) 2004 Wim Taymans <wim@fluendo.com>
+ * Made on request for Kognate <rebusman>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -26,7 +21,7 @@
 /**
  * SECTION:element-videoscaledmixer
  *
- * Videoscaledmixer can accept AYUV, ARGB and BGRA video streams. For each of the requested
+ * Videomixer can accept AYUV, ARGB and BGRA video streams. For each of the requested
  * sink pads it will compare the incoming geometry and framerate to define the
  * output parameters. Indeed output video frames will have the geometry of the
  * biggest incoming video stream and the framerate of the fastest incoming one.
@@ -34,6 +29,7 @@
  * All sink pads must be either AYUV, ARGB or BGRA, but a mixture of them is not 
  * supported. The src pad will have the same colorspace as the sinks. 
  * No colorspace conversion is done. 
+ * 
  *
  * Individual parameters for each input stream can be configured on the
  * #GstVideoScaledMixerPad.
@@ -41,14 +37,7 @@
  * <refsect2>
  * <title>Sample pipelines</title>
  * |[
- * gst-launch-0.10 \
- *   videotestsrc pattern=1 ! \
- *   video/x-raw-yuv,format=\(fourcc\)AYUV,framerate=\(fraction\)10/1,width=100,height=100 ! \
- *   videobox border-alpha=0 top=-70 bottom=-70 right=-220 ! \
- *   videoscaledmixer name=mix sink_0::alpha=0.7 sink_1::alpha=0.5 ! \
- *   ffmpegcolorspace ! xvimagesink \
- *   videotestsrc ! \
- *   video/x-raw-yuv,format=\(fourcc\)AYUV,framerate=\(fraction\)5/1,width=320,height=240 ! mix.
+ * gst-launch videotestsrc pattern=1 ! video/x-raw-yuv,format=\(fourcc\)AYUV, framerate=\(fraction\)10/1, width=100, height=100 ! videobox border-alpha=0 alpha=0.5 top=-70 bottom=-70 right=-220 ! videoscaledmixer name=mix ! ffmpegcolorspace ! xvimagesink videotestsrc ! video/x-raw-yuv, format=\(fourcc\)AYUV, framerate=\(fraction\)5/1, width=320, height=240 ! alpha alpha=0.7 ! mix.
  * ]| A pipeline to demonstrate videoscaledmixer used together with videobox.
  * This should show a 320x240 pixels video test source with some transparency
  * showing the background checker pattern. Another video test source with just
@@ -57,27 +46,22 @@
  * video test source behind and the checker pattern under it. Note that the
  * framerate of the output video is 10 frames per second.
  * |[
- * gst-launch videotestsrc pattern=1 ! \
- *   video/x-raw-rgb, framerate=\(fraction\)10/1, width=100, height=100 ! \
- *   videoscaledmixer name=mix ! ffmpegcolorspace ! ximagesink \
- *   videotestsrc !  \
- *   video/x-raw-rgb, framerate=\(fraction\)5/1, width=320, height=240 ! mix.
+ * gst-launch videotestsrc pattern=1 ! video/x-raw-rgb, framerate=\(fraction\)10/1, width=100, height=100 ! videoscaledmixer name=mix ! ffmpegcolorspace ! ximagesink videotestsrc ! video/x-raw-rgb, framerate=\(fraction\)5/1, width=320, height=240 ! mix.
  * ]| A pipeline to demostrate bgra mixing. (This does not demonstrate alpha blending). 
  * |[
- * gst-launch videotestsrc pattern=1 ! \
- *   video/x-raw-yuv,format =\(fourcc\)I420, framerate=\(fraction\)10/1, width=100, height=100 ! \
- *   videoscaledmixer name=mix ! ffmpegcolorspace ! ximagesink \
- *   videotestsrc ! \
- *   video/x-raw-yuv,format=\(fourcc\)I420, framerate=\(fraction\)5/1, width=320, height=240 ! mix.
+ * gst-launch   videotestsrc pattern=1 ! video/x-raw-yuv,format =\(fourcc\)I420, framerate=\(fraction\)10/1, width=100, height=100 ! videoscaledmixer name=mix ! ffmpegcolorspace ! ximagesink videotestsrc ! video/x-raw-yuv,format=\(fourcc\)I420, framerate=\(fraction\)5/1, width=320, height=240 ! mix.
  * ]| A pipeline to test I420
- * |[
- * gst-launch videotestsrc pattern="snow" ! video/x-raw-yuv, framerate=\(fraction\)10/1, width=200, height=150 ! videoscaledmixer name=mix sink_1::xpos=20 sink_1::ypos=20 sink_1::alpha=0.5 ! ffmpegcolorspace ! xvimagesink videotestsrc ! video/x-raw-yuv, framerate=\(fraction\)10/1, width=640, height=360 ! mix.
- * ]| Set position and alpha on the mixer using #GstVideoScaledMixerPad properties.
  * </refsect2>
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#ifdef HAVE_GCC_ASM
+#if defined(HAVE_CPU_I386) || defined(HAVE_CPU_X86_64)
+#define BUILD_X86_ASM
+#endif
 #endif
 
 #include <gst/gst.h>
@@ -93,17 +77,16 @@
 #endif
 
 #include "gstvideoscaledmixer.h"
-#define orc_memset memset
 
 GST_DEBUG_CATEGORY_STATIC (gst_videoscaledmixer_debug);
 #define GST_CAT_DEFAULT gst_videoscaledmixer_debug
 
-#define GST_VIDEOSCALED_MIXER_GET_STATE_LOCK(mix) \
-  (GST_VIDEOSCALED_MIXER(mix)->state_lock)
-#define GST_VIDEOSCALED_MIXER_STATE_LOCK(mix) \
-  (g_mutex_lock(GST_VIDEOSCALED_MIXER_GET_STATE_LOCK (mix)))
-#define GST_VIDEOSCALED_MIXER_STATE_UNLOCK(mix) \
-  (g_mutex_unlock(GST_VIDEOSCALED_MIXER_GET_STATE_LOCK (mix)))
+#define GST_VIDEO_SCALED_MIXER_GET_STATE_LOCK(mix) \
+  (GST_VIDEO_SCALED_MIXER(mix)->state_lock)
+#define GST_VIDEO_SCALED_MIXER_STATE_LOCK(mix) \
+  (g_mutex_lock(GST_VIDEO_SCALED_MIXER_GET_STATE_LOCK (mix)))
+#define GST_VIDEO_SCALED_MIXER_STATE_UNLOCK(mix) \
+  (g_mutex_unlock(GST_VIDEO_SCALED_MIXER_GET_STATE_LOCK (mix)))
 
 static GType gst_videoscaledmixer_get_type (void);
 
@@ -181,7 +164,7 @@ static void
 gst_videoscaledmixer_pad_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  GstVideoScaledMixerPad *pad = GST_VIDEOSCALED_MIXER_PAD (object);
+  GstVideoScaledMixerPad *pad = GST_VIDEO_SCALED_MIXER_PAD (object);
 
   switch (prop_id) {
     case PROP_PAD_ZORDER:
@@ -215,15 +198,15 @@ static void
 gst_videoscaledmixer_pad_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  GstVideoScaledMixerPad *pad = GST_VIDEOSCALED_MIXER_PAD (object);
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (gst_pad_get_parent (GST_PAD (pad)));
+  GstVideoScaledMixerPad *pad = GST_VIDEO_SCALED_MIXER_PAD (object);
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent (GST_PAD (pad)));
 
   switch (prop_id) {
     case PROP_PAD_ZORDER:
-      GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+      GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
       pad->zorder = g_value_get_uint (value);
       gst_videoscaledmixer_sort_pads (mix);
-      GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+      GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
       break;
     case PROP_PAD_XPOS:
       pad->xpos = g_value_get_int (value);
@@ -341,7 +324,7 @@ gst_videoscaledmixer_set_master_geometry (GstVideoScaledMixer * mix)
 
   walk = mix->sinkpads;
   while (walk) {
-    GstVideoScaledMixerPad *mixpad = GST_VIDEOSCALED_MIXER_PAD (walk->data);
+    GstVideoScaledMixerPad *mixpad = GST_VIDEO_SCALED_MIXER_PAD (walk->data);
 
     walk = g_slist_next (walk);
 
@@ -392,8 +375,8 @@ gst_videoscaledmixer_pad_sink_setcaps (GstPad * pad, GstCaps * vscaps)
 
   GST_INFO_OBJECT (pad, "Setting caps %" GST_PTR_FORMAT, vscaps);
 
-  mix = GST_VIDEOSCALED_MIXER (gst_pad_get_parent (pad));
-  mixpad = GST_VIDEOSCALED_MIXER_PAD (pad);
+  mix = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent (pad));
+  mixpad = GST_VIDEO_SCALED_MIXER_PAD (pad);
 
   if (!mixpad)
     goto beach;
@@ -406,7 +389,7 @@ gst_videoscaledmixer_pad_sink_setcaps (GstPad * pad, GstCaps * vscaps)
     goto beach;
   par = gst_structure_get_value (structure, "pixel-aspect-ratio");
 
-  GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
   mixpad->fps_n = gst_value_get_fraction_numerator (framerate);
   mixpad->fps_d = gst_value_get_fraction_denominator (framerate);
   if (par) {
@@ -420,7 +403,7 @@ gst_videoscaledmixer_pad_sink_setcaps (GstPad * pad, GstCaps * vscaps)
   mixpad->in_height = in_height;
 
   gst_videoscaledmixer_set_master_geometry (mix);
-  GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
 
   ret = TRUE;
 
@@ -439,8 +422,8 @@ gst_videoscaledmixer_pad_sink_getcaps (GstPad * pad)
   GstCaps *mastercaps;
   GstStructure *st;
 
-  mix = GST_VIDEOSCALED_MIXER (gst_pad_get_parent (pad));
-  mixpad = GST_VIDEOSCALED_MIXER_PAD (pad);
+  mix = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent (pad));
+  mixpad = GST_VIDEO_SCALED_MIXER_PAD (pad);
 
   if (!mixpad)
     goto beach;
@@ -452,11 +435,11 @@ gst_videoscaledmixer_pad_sink_getcaps (GstPad * pad)
     goto beach;
   }
 
-  GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
 
   /* Return as-is if not other sinkpad set as master */
   if (mix->master == NULL) {
-    GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+    GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
     goto beach;
   }
 
@@ -465,7 +448,7 @@ gst_videoscaledmixer_pad_sink_getcaps (GstPad * pad)
   /* If master pad caps aren't negotiated yet, return downstream
    * allowed caps */
   if (!GST_CAPS_IS_SIMPLE (mastercaps)) {
-    GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+    GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
     gst_caps_unref (mastercaps);
     goto beach;
   }
@@ -479,7 +462,8 @@ gst_videoscaledmixer_pad_sink_getcaps (GstPad * pad)
   if (!gst_structure_has_field (st, "pixel-aspect-ratio"))
     gst_structure_set (st, "pixel-aspect-ratio", GST_TYPE_FRACTION, 1, 1, NULL);
 
-  GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
+
 
 beach:
   GST_DEBUG_OBJECT (pad, "Returning %" GST_PTR_FORMAT, res);
@@ -498,9 +482,9 @@ gst_videoscaledmixer_pad_sink_acceptcaps (GstPad * pad, GstCaps * vscaps)
   GstVideoScaledMixer *mix;
   GstCaps *acceptedCaps;
 
-  mix = GST_VIDEOSCALED_MIXER (gst_pad_get_parent (pad));
+  mix = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent (pad));
   GST_DEBUG_OBJECT (pad, "%" GST_PTR_FORMAT, vscaps);
-  GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
 
   if (mix->master) {
     acceptedCaps = gst_pad_get_fixed_caps_func (GST_PAD (mix->master));
@@ -521,13 +505,15 @@ gst_videoscaledmixer_pad_sink_acceptcaps (GstPad * pad, GstCaps * vscaps)
   }
 
   GST_INFO_OBJECT (pad, "vscaps: %" GST_PTR_FORMAT, vscaps);
+  GST_INFO_OBJECT (mix, "vscaps: %" GST_PTR_FORMAT, vscaps);
   GST_INFO_OBJECT (pad, "acceptedCaps: %" GST_PTR_FORMAT, acceptedCaps);
+  GST_INFO_OBJECT (mix, "vscaps: %" GST_PTR_FORMAT, vscaps);
 
   ret = gst_caps_can_intersect (vscaps, acceptedCaps);
   GST_INFO_OBJECT (pad, "%saccepted caps %" GST_PTR_FORMAT, (ret ? "" : "not "),
       vscaps);
   gst_caps_unref (acceptedCaps);
-  GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
   gst_object_unref (mix);
   return ret;
 }
@@ -562,35 +548,10 @@ enum
   LAST_SIGNAL
 };
 
-#define DEFAULT_BACKGROUND VIDEOSCALED_MIXER_BACKGROUND_CHECKER
 enum
 {
-  PROP_0,
-  PROP_BACKGROUND
+  PROP_0
 };
-
-#define GST_TYPE_VIDEOSCALED_MIXER_BACKGROUND (gst_video_mixer_background_get_type())
-static GType
-gst_video_mixer_background_get_type (void)
-{
-  static GType video_mixer_background_type = 0;
-
-  static const GEnumValue video_mixer_background[] = {
-    {VIDEOSCALED_MIXER_BACKGROUND_CHECKER, "Checker pattern", "checker"},
-    {VIDEOSCALED_MIXER_BACKGROUND_BLACK, "Black", "black"},
-    {VIDEOSCALED_MIXER_BACKGROUND_WHITE, "White", "white"},
-    {VIDEOSCALED_MIXER_BACKGROUND_TRANSPARENT,
-        "Transparent Background to enable further mixing", "transparent"},
-    {0, NULL, NULL},
-  };
-
-  if (!video_mixer_background_type) {
-    video_mixer_background_type =
-        g_enum_register_static ("GstVideoScaledMixerBackground",
-        video_mixer_background);
-  }
-  return video_mixer_background_type;
-}
 
 static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
@@ -666,13 +627,13 @@ static GstObject *
 gst_videoscaledmixer_child_proxy_get_child_by_index (GstChildProxy * child_proxy,
     guint index)
 {
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (child_proxy);
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (child_proxy);
   GstObject *obj;
 
-  GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
   if ((obj = g_slist_nth_data (mix->sinkpads, index)))
     gst_object_ref (obj);
-  GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
   return obj;
 }
 
@@ -680,11 +641,11 @@ static guint
 gst_videoscaledmixer_child_proxy_get_children_count (GstChildProxy * child_proxy)
 {
   guint count = 0;
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (child_proxy);
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (child_proxy);
 
-  GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
   count = mix->numpads;
-  GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
   GST_INFO_OBJECT (mix, "Children Count: %d", count);
   return count;
 }
@@ -711,7 +672,7 @@ gst_videoscaledmixer_base_init (gpointer g_class)
 
   gst_element_class_set_details_simple (element_class, "Video mixer",
       "Filter/Editor/Video",
-      "Mix multiple video streams", "Wim Taymans <wim@fluendo.com>");
+      "Mix and scale video sources", "Yves Degoyon <ydegoyon@gmail.com>");
 }
 
 static void
@@ -725,11 +686,6 @@ gst_videoscaledmixer_class_init (GstVideoScaledMixerClass * klass)
   gobject_class->get_property = gst_videoscaledmixer_get_property;
   gobject_class->set_property = gst_videoscaledmixer_set_property;
 
-  g_object_class_install_property (gobject_class, PROP_BACKGROUND,
-      g_param_spec_enum ("background", "Background", "Background type",
-          GST_TYPE_VIDEOSCALED_MIXER_BACKGROUND,
-          DEFAULT_BACKGROUND, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
   gstelement_class->request_new_pad =
       GST_DEBUG_FUNCPTR (gst_videoscaledmixer_request_new_pad);
   gstelement_class->release_pad =
@@ -738,9 +694,7 @@ gst_videoscaledmixer_class_init (GstVideoScaledMixerClass * klass)
       GST_DEBUG_FUNCPTR (gst_videoscaledmixer_change_state);
 
   /* Register the pad class */
-  (void) (GST_TYPE_VIDEOSCALED_MIXER_PAD);
-  /* Register the background enum */
-  (void) (GST_TYPE_VIDEOSCALED_MIXER_BACKGROUND);
+  (void) (GST_TYPE_VIDEO_SCALED_MIXER_PAD);
 }
 
 static void
@@ -808,7 +762,6 @@ gst_videoscaledmixer_init (GstVideoScaledMixer * mix, GstVideoScaledMixerClass *
   gst_element_add_pad (GST_ELEMENT (mix), mix->srcpad);
 
   mix->collect = gst_collect_pads_new ();
-  mix->background = DEFAULT_BACKGROUND;
 
   gst_collect_pads_set_function (mix->collect,
       (GstCollectPadsFunction) GST_DEBUG_FUNCPTR (gst_videoscaledmixer_collected),
@@ -822,7 +775,7 @@ gst_videoscaledmixer_init (GstVideoScaledMixer * mix, GstVideoScaledMixerClass *
 static void
 gst_videoscaledmixer_finalize (GObject * object)
 {
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (object);
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (object);
 
   gst_object_unref (mix->collect);
   g_mutex_free (mix->state_lock);
@@ -990,7 +943,7 @@ gst_videoscaledmixer_query_latency (GstVideoScaledMixer * mix, GstQuery * query)
 static gboolean
 gst_videoscaledmixer_query (GstPad * pad, GstQuery * query)
 {
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (gst_pad_get_parent (pad));
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent (pad));
   gboolean res = FALSE;
 
   switch (GST_QUERY_TYPE (query)) {
@@ -1031,7 +984,7 @@ gst_videoscaledmixer_query (GstPad * pad, GstQuery * query)
 static GstCaps *
 gst_videoscaledmixer_getcaps (GstPad * pad)
 {
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (gst_pad_get_parent (pad));
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent (pad));
   GstCaps *caps;
   GstStructure *structure;
   int numCaps;
@@ -1067,13 +1020,19 @@ gst_videoscaledmixer_getcaps (GstPad * pad)
 static gboolean
 gst_videoscaledmixer_setcaps (GstPad * pad, GstCaps * caps)
 {
-  GstVideoScaledMixer *mixer = GST_VIDEOSCALED_MIXER (gst_pad_get_parent_element (pad));
+  GstVideoScaledMixer *mixer = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent_element (pad));
   gboolean ret = FALSE;
 
   GST_INFO_OBJECT (mixer, "set src caps: %" GST_PTR_FORMAT, caps);
 
+  mixer->blend = NULL;
+  mixer->fill_checker = NULL;
+  mixer->fill_color = NULL;
+
   if (!gst_video_format_parse_caps (caps, &mixer->fmt, NULL, NULL))
     goto done;
+
+  ret=TRUE;
 
 done:
   gst_object_unref (mixer);
@@ -1096,16 +1055,16 @@ gst_videoscaledmixer_request_new_pad (GstElement * element,
     return NULL;
   }
 
-  g_return_val_if_fail (GST_IS_VIDEOSCALED_MIXER (element), NULL);
+  g_return_val_if_fail (GST_IS_VIDEO_SCALED_MIXER (element), NULL);
 
-  mix = GST_VIDEOSCALED_MIXER (element);
+  mix = GST_VIDEO_SCALED_MIXER (element);
 
   if (templ == gst_element_class_get_pad_template (klass, "sink_%d")) {
     gint serial = 0;
     gchar *name = NULL;
     GstVideoScaledMixerCollect *mixcol = NULL;
 
-    GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+    GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
     if (req_name == NULL || strlen (req_name) < 6
         || !g_str_has_prefix (req_name, "sink_")) {
       /* no name given when requesting the pad, use next available int */
@@ -1118,7 +1077,7 @@ gst_videoscaledmixer_request_new_pad (GstElement * element,
     }
     /* create new pad with the name */
     name = g_strdup_printf ("sink_%d", serial);
-    mixpad = g_object_new (GST_TYPE_VIDEOSCALED_MIXER_PAD, "name", name, "direction",
+    mixpad = g_object_new (GST_TYPE_VIDEO_SCALED_MIXER_PAD, "name", name, "direction",
         templ->direction, "template", templ, NULL);
     g_free (name);
 
@@ -1126,6 +1085,10 @@ gst_videoscaledmixer_request_new_pad (GstElement * element,
     mixpad->xpos = DEFAULT_PAD_XPOS;
     mixpad->ypos = DEFAULT_PAD_YPOS;
     mixpad->alpha = DEFAULT_PAD_ALPHA;
+    mixpad->owidth = DEFAULT_PAD_WIDTH;
+    mixpad->oheight = DEFAULT_PAD_HEIGHT;
+    mixpad->ename = (char*)malloc(strlen(DEFAULT_PAD_ENAME)+1);
+    strcpy( mixpad->ename, DEFAULT_PAD_ENAME );
 
     mixcol = (GstVideoScaledMixerCollect *)
         gst_collect_pads_add_pad (mix->collect, GST_PAD (mixpad),
@@ -1146,7 +1109,7 @@ gst_videoscaledmixer_request_new_pad (GstElement * element,
     /* Keep an internal list of mixpads for zordering */
     mix->sinkpads = g_slist_append (mix->sinkpads, mixpad);
     mix->numpads++;
-    GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+    GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
   } else {
     g_warning ("videoscaledmixer: this is not our template!");
     return NULL;
@@ -1165,14 +1128,14 @@ gst_videoscaledmixer_release_pad (GstElement * element, GstPad * pad)
   GstVideoScaledMixer *mix = NULL;
   GstVideoScaledMixerPad *mixpad;
 
-  mix = GST_VIDEOSCALED_MIXER (element);
-  GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+  mix = GST_VIDEO_SCALED_MIXER (element);
+  GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
   if (G_UNLIKELY (g_slist_find (mix->sinkpads, pad) == NULL)) {
     g_warning ("Unknown pad %s", GST_PAD_NAME (pad));
     goto error;
   }
 
-  mixpad = GST_VIDEOSCALED_MIXER_PAD (pad);
+  mixpad = GST_VIDEO_SCALED_MIXER_PAD (pad);
 
   mix->sinkpads = g_slist_remove (mix->sinkpads, pad);
   gst_videoscaledmixer_collect_free (mixpad->mixcol);
@@ -1181,12 +1144,12 @@ gst_videoscaledmixer_release_pad (GstElement * element, GstPad * pad)
   /* determine possibly new geometry and master */
   gst_videoscaledmixer_set_master_geometry (mix);
   mix->numpads--;
-  GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
 
   gst_element_remove_pad (element, pad);
   return;
 error:
-  GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
 }
 
 static int
@@ -1211,7 +1174,7 @@ gst_videoscaledmixer_fill_queues (GstVideoScaledMixer * mix)
   GSList *walk = NULL;
   gboolean eos = TRUE;
 
-  g_return_val_if_fail (GST_IS_VIDEOSCALED_MIXER (mix), FALSE);
+  g_return_val_if_fail (GST_IS_VIDEO_SCALED_MIXER (mix), FALSE);
 
   /* try to make sure we have a buffer from each usable pad first */
   walk = mix->collect->data;
@@ -1312,7 +1275,6 @@ static void
 gst_videoscaledmixer_blend_buffers (GstVideoScaledMixer * mix, GstBuffer * outbuf)
 {
   GSList *l;
-  GstFlowReturn ret;
 
   // setting time stamps
   for (l = mix->sinkpads; l; l = l->next) {
@@ -1394,6 +1356,7 @@ gst_videoscaledmixer_blend_buffers (GstVideoScaledMixer * mix, GstBuffer * outbu
   }
 
   return;
+
 }
 
 /* remove buffers from the queue that were expired in the
@@ -1418,7 +1381,7 @@ gst_videoscaledmixer_update_queues (GstVideoScaledMixer * mix)
 
   walk = mix->sinkpads;
   while (walk) {
-    GstVideoScaledMixerPad *pad = GST_VIDEOSCALED_MIXER_PAD (walk->data);
+    GstVideoScaledMixerPad *pad = GST_VIDEO_SCALED_MIXER_PAD (walk->data);
     GstVideoScaledMixerCollect *mixcol = pad->mixcol;
 
     walk = g_slist_next (walk);
@@ -1454,7 +1417,7 @@ gst_videoscaledmixer_collected (GstCollectPads * pads, GstVideoScaledMixer * mix
   GstClockTime timestamp = GST_CLOCK_TIME_NONE;
   GstClockTime duration = GST_CLOCK_TIME_NONE;
 
-  g_return_val_if_fail (GST_IS_VIDEOSCALED_MIXER (mix), GST_FLOW_ERROR);
+  g_return_val_if_fail (GST_IS_VIDEO_SCALED_MIXER (mix), GST_FLOW_ERROR);
 
   /* This must be set, otherwise we have no caps */
   if (G_UNLIKELY (mix->in_width == 0))
@@ -1466,7 +1429,7 @@ gst_videoscaledmixer_collected (GstCollectPads * pads, GstVideoScaledMixer * mix
   }
 
   GST_LOG_OBJECT (mix, "all pads are collected");
-  GST_VIDEOSCALED_MIXER_STATE_LOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_LOCK (mix);
 
   eos = gst_videoscaledmixer_fill_queues (mix);
 
@@ -1523,7 +1486,7 @@ gst_videoscaledmixer_collected (GstCollectPads * pads, GstVideoScaledMixer * mix
 
   if (!gst_videoscaledmixer_do_qos (mix, timestamp)) {
     gst_videoscaledmixer_update_queues (mix);
-    GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+    GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
     ret = GST_FLOW_OK;
     goto beach;
   }
@@ -1531,9 +1494,12 @@ gst_videoscaledmixer_collected (GstCollectPads * pads, GstVideoScaledMixer * mix
   /* allocate an output buffer */
   outsize =
       gst_video_format_get_size (mix->fmt, mix->out_width, mix->out_height);
+  GST_LOG_OBJECT (mix, "buffer out size %d", outsize);
+  GST_LOG_OBJECT (mix, "allocating buffer with caps %" GST_PTR_FORMAT, GST_PAD_CAPS (mix->srcpad) );
   ret =
       gst_pad_alloc_buffer_and_set_caps (mix->srcpad, GST_BUFFER_OFFSET_NONE,
       outsize, GST_PAD_CAPS (mix->srcpad), &outbuf);
+  GST_LOG_OBJECT (mix, "set caps returns %d", ret);
 
   if (ret != GST_FLOW_OK) {
     goto error;
@@ -1542,18 +1508,12 @@ gst_videoscaledmixer_collected (GstCollectPads * pads, GstVideoScaledMixer * mix
   GST_BUFFER_TIMESTAMP (outbuf) = timestamp;
   GST_BUFFER_DURATION (outbuf) = duration;
 
-  orc_memset (GST_BUFFER_DATA (outbuf), 0,
-      gst_video_format_get_row_stride (mix->fmt, 0,
-          mix->out_width) * mix->out_height);
-
   gst_videoscaledmixer_blend_buffers (mix, outbuf);
 
   gst_videoscaledmixer_update_queues (mix);
-  GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+  GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
 
   ret = gst_pad_push (mix->srcpad, outbuf);
-
-  GST_DEBUG_OBJECT (mix, "collected returns %d", ret );
 
 beach:
   return ret;
@@ -1564,7 +1524,7 @@ error:
     if (outbuf)
       gst_buffer_unref (outbuf);
 
-    GST_VIDEOSCALED_MIXER_STATE_UNLOCK (mix);
+    GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
     goto beach;
   }
 }
@@ -1615,7 +1575,7 @@ forward_event (GstVideoScaledMixer * mix, GstEvent * event)
 static gboolean
 gst_videoscaledmixer_src_event (GstPad * pad, GstEvent * event)
 {
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (gst_pad_get_parent (pad));
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent (pad));
   gboolean result;
 
   switch (GST_EVENT_TYPE (event)) {
@@ -1704,8 +1664,8 @@ gst_videoscaledmixer_src_event (GstPad * pad, GstEvent * event)
 static gboolean
 gst_videoscaledmixer_sink_event (GstPad * pad, GstEvent * event)
 {
-  GstVideoScaledMixerPad *vpad = GST_VIDEOSCALED_MIXER_PAD (pad);
-  GstVideoScaledMixer *videoscaledmixer = GST_VIDEOSCALED_MIXER (gst_pad_get_parent (pad));
+  GstVideoScaledMixerPad *vpad = GST_VIDEO_SCALED_MIXER_PAD (pad);
+  GstVideoScaledMixer *videoscaledmixer = GST_VIDEO_SCALED_MIXER (gst_pad_get_parent (pad));
   gboolean ret;
 
   GST_DEBUG_OBJECT (pad, "Got %s event on pad %s:%s",
@@ -1751,12 +1711,9 @@ static void
 gst_videoscaledmixer_get_property (GObject * object,
     guint prop_id, GValue * value, GParamSpec * pspec)
 {
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (object);
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (object);
 
   switch (prop_id) {
-    case PROP_BACKGROUND:
-      g_value_set_enum (value, mix->background);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -1767,12 +1724,9 @@ static void
 gst_videoscaledmixer_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
 {
-  GstVideoScaledMixer *mix = GST_VIDEOSCALED_MIXER (object);
+  GstVideoScaledMixer *mix = GST_VIDEO_SCALED_MIXER (object);
 
   switch (prop_id) {
-    case PROP_BACKGROUND:
-      mix->background = g_value_get_enum (value);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -1785,9 +1739,9 @@ gst_videoscaledmixer_change_state (GstElement * element, GstStateChange transiti
   GstVideoScaledMixer *mix;
   GstStateChangeReturn ret;
 
-  g_return_val_if_fail (GST_IS_VIDEOSCALED_MIXER (element), GST_STATE_CHANGE_FAILURE);
+  g_return_val_if_fail (GST_IS_VIDEO_SCALED_MIXER (element), GST_STATE_CHANGE_FAILURE);
 
-  mix = GST_VIDEOSCALED_MIXER (element);
+  mix = GST_VIDEO_SCALED_MIXER (element);
 
   switch (transition) {
     case GST_STATE_CHANGE_READY_TO_PAUSED:
@@ -1819,13 +1773,13 @@ static gboolean
 plugin_init (GstPlugin * plugin)
 {
   GST_DEBUG_CATEGORY_INIT (gst_videoscaledmixer_debug, "videoscaledmixer", 0,
-      "video mixer");
+      "video scaled mixer");
 
   return gst_element_register (plugin, "videoscaledmixer", GST_RANK_PRIMARY,
-      GST_TYPE_VIDEOSCALED_MIXER);
+      GST_TYPE_VIDEO_SCALED_MIXER);
 }
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     "videoscaledmixer",
-    "Video mixer", plugin_init, VERSION, "LGPL", "VideoScaledMixer", "http://giss.tv")
+    "Video scaled mixer", plugin_init, VERSION, "LGPL", "videoscaledmixer", "http://giss.tv")

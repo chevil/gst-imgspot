@@ -17,45 +17,28 @@
  * Boston, MA 02111-1307, USA.
  */
  
-#ifndef __GST_VIDEOSCALED_MIXER_H__
-#define __GST_VIDEOSCALED_MIXER_H__
+#ifndef __GST_VIDEO_SCALED_MIXER_H__
+#define __GST_VIDEO_SCALED_MIXER_H__
 
 #include <gst/gst.h>
 #include <gst/video/video.h>
 #include "videoscaledmixerpad.h"
+#include "blend.h"
 
 G_BEGIN_DECLS
 
-#define GST_TYPE_VIDEOSCALED_MIXER (gst_videoscaledmixer_get_type())
-#define GST_VIDEOSCALED_MIXER(obj) \
-        (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_VIDEOSCALED_MIXER, GstVideoScaledMixer))
-#define GST_VIDEOSCALED_MIXER_CLASS(klass) \
-        (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_VIDEOSCALED_MIXER, GstVideoScaledMixerClass))
-#define GST_IS_VIDEOSCALED_MIXER(obj) \
-        (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_VIDEOSCALED_MIXER))
-#define GST_IS_VIDEOSCALED_MIXER_CLASS(klass) \
-        (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_VIDEOSCALED_MIXER))
+#define GST_TYPE_VIDEO_SCALED_MIXER (gst_videoscaledmixer_get_type())
+#define GST_VIDEO_SCALED_MIXER(obj) \
+        (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_VIDEO_SCALED_MIXER, GstVideoScaledMixer))
+#define GST_VIDEO_SCALED_MIXER_CLASS(klass) \
+        (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_VIDEO_SCALED_MIXER, GstVideoScaledMixerClass))
+#define GST_IS_VIDEO_SCALED_MIXER(obj) \
+        (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_VIDEO_SCALED_MIXER))
+#define GST_IS_VIDEO_SCALED_MIXER_CLASS(klass) \
+        (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_VIDEO_SCALED_MIXER))
 
 typedef struct _GstVideoScaledMixer GstVideoScaledMixer;
 typedef struct _GstVideoScaledMixerClass GstVideoScaledMixerClass;
-
-/**
- * GstVideoScaledMixerBackground:
- * @VIDEOSCALED_MIXER_BACKGROUND_CHECKER: checker pattern background
- * @VIDEOSCALED_MIXER_BACKGROUND_BLACK: solid color black background
- * @VIDEOSCALED_MIXER_BACKGROUND_WHITE: solid color white background
- * @VIDEOSCALED_MIXER_BACKGROUND_TRANSPARENT: background is left transparent and layers are composited using "A OVER B" composition rules. This is only applicable to AYUV and ARGB (and variants) as it preserves the alpha channel and allows for further mixing.
- *
- * The different backgrounds videoscaledmixer can blend over.
- */
-typedef enum
-{
-  VIDEOSCALED_MIXER_BACKGROUND_CHECKER,
-  VIDEOSCALED_MIXER_BACKGROUND_BLACK,
-  VIDEOSCALED_MIXER_BACKGROUND_WHITE,
-  VIDEOSCALED_MIXER_BACKGROUND_TRANSPARENT,
-}
-GstVideoScaledMixerBackground;
 
 /**
  * GstVideoScaledMixer:
@@ -91,8 +74,6 @@ struct _GstVideoScaledMixer
   gboolean setcaps;
   gboolean sendseg;
 
-  GstVideoScaledMixerBackground background;
-
   gint fps_n;
   gint fps_d;
 
@@ -113,6 +94,10 @@ struct _GstVideoScaledMixer
   gdouble proportion;
   GstClockTime earliest_time;
 
+  BlendFunction blend;
+  FillCheckerFunction fill_checker;
+  FillColorFunction fill_color;
+
   gboolean flush_stop_pending;
 };
 
@@ -121,7 +106,5 @@ struct _GstVideoScaledMixerClass
   GstElementClass parent_class;
 };
 
-GType gst_video_mixer_get_type (void);
-
 G_END_DECLS
-#endif /* __GST_VIDEOSCALED_MIXER_H__ */
+#endif /* __GST_VIDEO_SCALED_MIXER_H__ */

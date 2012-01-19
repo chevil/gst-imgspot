@@ -4,7 +4,7 @@ plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la libgstvideoscaledmixer.l
 # sources used to compile this plug-in
 libgstimgspot_la_SOURCES = gstimgspot.c
 libgstkfilesrc_la_SOURCES = gstkfilesrc.c
-libgstvideoscaledmixer_la_SOURCES = gstvideoscaledmixer.c gstcollectpads2.c
+libgstvideoscaledmixer_la_SOURCES = gstvideoscaledmixer.c
 libgstaudio_la_SOURCES = audio.c gstringbuffer.c gstaudioclock.c mixerutils.c multichannel.c gstbaseaudiosink.c gstbaseaudiosrc.c gstaudiofilter.c gstaudiosink.c gstaudiosrc.c audio-enumtypes.c
 
 libgstimgspot_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.

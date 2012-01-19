@@ -1,48 +1,38 @@
 libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
- /usr/include/features.h /usr/include/x86_64-linux-gnu/bits/predefs.h \
- /usr/include/x86_64-linux-gnu/sys/cdefs.h \
- /usr/include/x86_64-linux-gnu/bits/wordsize.h \
- /usr/include/x86_64-linux-gnu/gnu/stubs.h \
- /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
- /usr/lib/gcc/x86_64-linux-gnu/4.6/include/stddef.h \
- /usr/include/xlocale.h /usr/include/x86_64-linux-gnu/bits/string.h \
- /usr/include/x86_64-linux-gnu/bits/string2.h /usr/include/endian.h \
- /usr/include/x86_64-linux-gnu/bits/endian.h \
- /usr/include/x86_64-linux-gnu/bits/byteswap.h \
- /usr/include/x86_64-linux-gnu/bits/types.h \
- /usr/include/x86_64-linux-gnu/bits/typesizes.h /usr/include/stdlib.h \
- gstaudiosink.h /usr/include/gstreamer-0.10/gst/gst.h \
- /usr/include/glib-2.0/glib.h /usr/include/glib-2.0/glib/galloca.h \
- /usr/include/glib-2.0/glib/gtypes.h \
- /usr/lib/x86_64-linux-gnu/glib-2.0/include/glibconfig.h \
+ /usr/include/features.h /usr/include/bits/predefs.h \
+ /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h \
+ /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h \
+ /usr/lib/gcc/i686-linux-gnu/4.4.5/include/stddef.h \
+ /usr/include/xlocale.h /usr/include/bits/string.h \
+ /usr/include/bits/string2.h /usr/include/endian.h \
+ /usr/include/bits/endian.h /usr/include/bits/byteswap.h \
+ /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+ /usr/include/stdlib.h /usr/include/bits/string3.h gstaudiosink.h \
+ /usr/include/gstreamer-0.10/gst/gst.h /usr/include/glib-2.0/glib.h \
+ /usr/include/glib-2.0/glib/galloca.h /usr/include/glib-2.0/glib/gtypes.h \
+ /usr/lib/glib-2.0/include/glibconfig.h \
  /usr/include/glib-2.0/glib/gmacros.h \
- /usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/limits.h \
- /usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/syslimits.h \
- /usr/include/limits.h /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
- /usr/include/x86_64-linux-gnu/bits/local_lim.h \
- /usr/include/linux/limits.h \
- /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
- /usr/lib/gcc/x86_64-linux-gnu/4.6/include/float.h /usr/include/time.h \
- /usr/include/x86_64-linux-gnu/bits/time.h \
+ /usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/limits.h \
+ /usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/syslimits.h \
+ /usr/include/limits.h /usr/include/bits/posix1_lim.h \
+ /usr/include/bits/local_lim.h /usr/include/linux/limits.h \
+ /usr/include/bits/posix2_lim.h \
+ /usr/lib/gcc/i686-linux-gnu/4.4.5/include/float.h \
  /usr/include/glib-2.0/glib/garray.h \
  /usr/include/glib-2.0/glib/gasyncqueue.h \
  /usr/include/glib-2.0/glib/gthread.h /usr/include/glib-2.0/glib/gerror.h \
- /usr/lib/gcc/x86_64-linux-gnu/4.6/include/stdarg.h \
+ /usr/lib/gcc/i686-linux-gnu/4.4.5/include/stdarg.h \
  /usr/include/glib-2.0/glib/gquark.h /usr/include/glib-2.0/glib/gutils.h \
  /usr/include/glib-2.0/glib/gatomic.h \
  /usr/include/glib-2.0/glib/gbacktrace.h /usr/include/signal.h \
- /usr/include/x86_64-linux-gnu/bits/sigset.h \
- /usr/include/x86_64-linux-gnu/bits/signum.h \
- /usr/include/x86_64-linux-gnu/bits/siginfo.h \
- /usr/include/x86_64-linux-gnu/bits/sigaction.h \
- /usr/include/x86_64-linux-gnu/bits/sigcontext.h \
- /usr/include/x86_64-linux-gnu/bits/sigstack.h \
- /usr/include/x86_64-linux-gnu/sys/ucontext.h \
- /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
- /usr/include/x86_64-linux-gnu/bits/sigthread.h \
+ /usr/include/bits/sigset.h /usr/include/bits/signum.h \
+ /usr/include/time.h /usr/include/bits/siginfo.h \
+ /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h \
+ /usr/include/bits/sigstack.h /usr/include/sys/ucontext.h \
+ /usr/include/bits/pthreadtypes.h /usr/include/bits/sigthread.h \
  /usr/include/glib-2.0/glib/gbase64.h \
  /usr/include/glib-2.0/glib/gbitlock.h \
- /usr/include/glib-2.0/glib/gbookmarkfile.h \
+ /usr/include/glib-2.0/glib/gbookmarkfile.h /usr/include/bits/time.h \
  /usr/include/glib-2.0/glib/gcache.h /usr/include/glib-2.0/glib/glist.h \
  /usr/include/glib-2.0/glib/gmem.h /usr/include/glib-2.0/glib/gslice.h \
  /usr/include/glib-2.0/glib/gchecksum.h \
@@ -52,9 +42,7 @@ libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
  /usr/include/glib-2.0/glib/gdatetime.h \
  /usr/include/glib-2.0/glib/gtimezone.h /usr/include/glib-2.0/glib/gdir.h \
  /usr/include/glib-2.0/glib/gfileutils.h \
- /usr/include/glib-2.0/glib/ghash.h /usr/include/glib-2.0/glib/ghmac.h \
- /usr/include/glib-2.0/glib/gchecksum.h \
- /usr/include/glib-2.0/glib/ghook.h \
+ /usr/include/glib-2.0/glib/ghash.h /usr/include/glib-2.0/glib/ghook.h \
  /usr/include/glib-2.0/glib/ghostutils.h \
  /usr/include/glib-2.0/glib/giochannel.h \
  /usr/include/glib-2.0/glib/gmain.h /usr/include/glib-2.0/glib/gpoll.h \
@@ -91,7 +79,6 @@ libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
  /usr/include/glib-2.0/gobject/gsignal.h \
  /usr/include/glib-2.0/gobject/gmarshal.h \
  /usr/include/glib-2.0/gobject/gboxed.h \
- /usr/include/glib-2.0/gobject/glib-types.h \
  /usr/include/glib-2.0/gobject/genums.h \
  /usr/include/glib-2.0/gobject/gparamspecs.h \
  /usr/include/glib-2.0/gobject/gsourceclosure.h \
@@ -108,9 +95,8 @@ libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
  /usr/include/libxml2/libxml/xmlexports.h \
  /usr/include/libxml2/libxml/tree.h /usr/include/stdio.h \
  /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
- /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/sys_errlist.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
+ /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
+ /usr/include/bits/stdio.h /usr/include/bits/stdio2.h \
  /usr/include/libxml2/libxml/xmlstring.h \
  /usr/include/libxml2/libxml/xmlregexp.h \
  /usr/include/libxml2/libxml/dict.h /usr/include/libxml2/libxml/hash.h \
@@ -122,12 +108,10 @@ libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
  /usr/include/libxml2/libxml/encoding.h /usr/include/iconv.h \
  /usr/include/libxml2/libxml/xmlIO.h \
  /usr/include/libxml2/libxml/globals.h /usr/include/libxml2/libxml/SAX.h \
- /usr/include/x86_64-linux-gnu/bits/waitflags.h \
- /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
- /usr/include/x86_64-linux-gnu/sys/types.h \
- /usr/include/x86_64-linux-gnu/sys/select.h \
- /usr/include/x86_64-linux-gnu/bits/select.h \
- /usr/include/x86_64-linux-gnu/sys/sysmacros.h /usr/include/alloca.h \
+ /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h \
+ /usr/include/sys/types.h /usr/include/sys/select.h \
+ /usr/include/bits/select.h /usr/include/sys/sysmacros.h \
+ /usr/include/alloca.h /usr/include/bits/stdlib.h \
  /usr/include/libxml2/libxml/xlink.h /usr/include/libxml2/libxml/SAX2.h \
  /usr/include/libxml2/libxml/xmlmemory.h \
  /usr/include/libxml2/libxml/threads.h \
@@ -138,7 +122,6 @@ libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
  /usr/include/gstreamer-0.10/gst/gstclock.h \
  /usr/include/gstreamer-0.10/gst/gstcaps.h \
  /usr/include/gstreamer-0.10/gst/gststructure.h \
- /usr/include/gstreamer-0.10/gst/gstdatetime.h \
  /usr/include/gstreamer-0.10/gst/gstbufferlist.h \
  /usr/include/gstreamer-0.10/gst/gstevent.h \
  /usr/include/gstreamer-0.10/gst/gstformat.h \
@@ -151,10 +134,8 @@ libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
  /usr/include/gstreamer-0.10/gst/gstbus.h \
  /usr/include/gstreamer-0.10/gst/gstmessage.h \
  /usr/include/gstreamer-0.10/gst/gstelementfactory.h \
- /usr/include/gstreamer-0.10/gst/gstplugin.h \
- /usr/include/x86_64-linux-gnu/sys/stat.h \
- /usr/include/x86_64-linux-gnu/bits/stat.h \
- /usr/include/glib-2.0/gmodule.h \
+ /usr/include/gstreamer-0.10/gst/gstplugin.h /usr/include/sys/stat.h \
+ /usr/include/bits/stat.h /usr/include/glib-2.0/gmodule.h \
  /usr/include/gstreamer-0.10/gst/gstmacros.h \
  /usr/include/gstreamer-0.10/gst/gstpluginfeature.h \
  /usr/include/gstreamer-0.10/gst/gstindex.h \
@@ -162,9 +143,9 @@ libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
  /usr/include/gstreamer-0.10/gst/gstchildproxy.h \
  /usr/include/gstreamer-0.10/gst/gstdebugutils.h \
  /usr/include/gstreamer-0.10/gst/gsterror.h /usr/include/errno.h \
- /usr/include/x86_64-linux-gnu/bits/errno.h /usr/include/linux/errno.h \
- /usr/include/x86_64-linux-gnu/asm/errno.h \
- /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
+ /usr/include/bits/errno.h /usr/include/linux/errno.h \
+ /usr/include/asm/errno.h /usr/include/asm-generic/errno.h \
+ /usr/include/asm-generic/errno-base.h \
  /usr/include/gstreamer-0.10/gst/gstghostpad.h \
  /usr/include/gstreamer-0.10/gst/gstinfo.h \
  /usr/include/gstreamer-0.10/gst/gstinterface.h \
@@ -195,35 +176,37 @@ libgstaudio_la-gstaudiosink.lo: gstaudiosink.c /usr/include/string.h \
 
 /usr/include/features.h:
 
-/usr/include/x86_64-linux-gnu/bits/predefs.h:
+/usr/include/bits/predefs.h:
 
-/usr/include/x86_64-linux-gnu/sys/cdefs.h:
+/usr/include/sys/cdefs.h:
 
-/usr/include/x86_64-linux-gnu/bits/wordsize.h:
+/usr/include/bits/wordsize.h:
 
-/usr/include/x86_64-linux-gnu/gnu/stubs.h:
+/usr/include/gnu/stubs.h:
 
-/usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
+/usr/include/gnu/stubs-32.h:
 
-/usr/lib/gcc/x86_64-linux-gnu/4.6/include/stddef.h:
+/usr/lib/gcc/i686-linux-gnu/4.4.5/include/stddef.h:
 
 /usr/include/xlocale.h:
 
-/usr/include/x86_64-linux-gnu/bits/string.h:
+/usr/include/bits/string.h:
 
-/usr/include/x86_64-linux-gnu/bits/string2.h:
+/usr/include/bits/string2.h:
 
 /usr/include/endian.h:
 
-/usr/include/x86_64-linux-gnu/bits/endian.h:
+/usr/include/bits/endian.h:
 
-/usr/include/x86_64-linux-gnu/bits/byteswap.h:
+/usr/include/bits/byteswap.h:
 
-/usr/include/x86_64-linux-gnu/bits/types.h:
+/usr/include/bits/types.h:
 
-/usr/include/x86_64-linux-gnu/bits/typesizes.h:
+/usr/include/bits/typesizes.h:
 
 /usr/include/stdlib.h:
+
+/usr/include/bits/string3.h:
 
 gstaudiosink.h:
 
@@ -235,29 +218,25 @@ gstaudiosink.h:
 
 /usr/include/glib-2.0/glib/gtypes.h:
 
-/usr/lib/x86_64-linux-gnu/glib-2.0/include/glibconfig.h:
+/usr/lib/glib-2.0/include/glibconfig.h:
 
 /usr/include/glib-2.0/glib/gmacros.h:
 
-/usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/limits.h:
+/usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/limits.h:
 
-/usr/lib/gcc/x86_64-linux-gnu/4.6/include-fixed/syslimits.h:
+/usr/lib/gcc/i686-linux-gnu/4.4.5/include-fixed/syslimits.h:
 
 /usr/include/limits.h:
 
-/usr/include/x86_64-linux-gnu/bits/posix1_lim.h:
+/usr/include/bits/posix1_lim.h:
 
-/usr/include/x86_64-linux-gnu/bits/local_lim.h:
+/usr/include/bits/local_lim.h:
 
 /usr/include/linux/limits.h:
 
-/usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
+/usr/include/bits/posix2_lim.h:
 
-/usr/lib/gcc/x86_64-linux-gnu/4.6/include/float.h:
-
-/usr/include/time.h:
-
-/usr/include/x86_64-linux-gnu/bits/time.h:
+/usr/lib/gcc/i686-linux-gnu/4.4.5/include/float.h:
 
 /usr/include/glib-2.0/glib/garray.h:
 
@@ -267,7 +246,7 @@ gstaudiosink.h:
 
 /usr/include/glib-2.0/glib/gerror.h:
 
-/usr/lib/gcc/x86_64-linux-gnu/4.6/include/stdarg.h:
+/usr/lib/gcc/i686-linux-gnu/4.4.5/include/stdarg.h:
 
 /usr/include/glib-2.0/glib/gquark.h:
 
@@ -279,29 +258,33 @@ gstaudiosink.h:
 
 /usr/include/signal.h:
 
-/usr/include/x86_64-linux-gnu/bits/sigset.h:
+/usr/include/bits/sigset.h:
 
-/usr/include/x86_64-linux-gnu/bits/signum.h:
+/usr/include/bits/signum.h:
 
-/usr/include/x86_64-linux-gnu/bits/siginfo.h:
+/usr/include/time.h:
 
-/usr/include/x86_64-linux-gnu/bits/sigaction.h:
+/usr/include/bits/siginfo.h:
 
-/usr/include/x86_64-linux-gnu/bits/sigcontext.h:
+/usr/include/bits/sigaction.h:
 
-/usr/include/x86_64-linux-gnu/bits/sigstack.h:
+/usr/include/bits/sigcontext.h:
 
-/usr/include/x86_64-linux-gnu/sys/ucontext.h:
+/usr/include/bits/sigstack.h:
 
-/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h:
+/usr/include/sys/ucontext.h:
 
-/usr/include/x86_64-linux-gnu/bits/sigthread.h:
+/usr/include/bits/pthreadtypes.h:
+
+/usr/include/bits/sigthread.h:
 
 /usr/include/glib-2.0/glib/gbase64.h:
 
 /usr/include/glib-2.0/glib/gbitlock.h:
 
 /usr/include/glib-2.0/glib/gbookmarkfile.h:
+
+/usr/include/bits/time.h:
 
 /usr/include/glib-2.0/glib/gcache.h:
 
@@ -330,10 +313,6 @@ gstaudiosink.h:
 /usr/include/glib-2.0/glib/gfileutils.h:
 
 /usr/include/glib-2.0/glib/ghash.h:
-
-/usr/include/glib-2.0/glib/ghmac.h:
-
-/usr/include/glib-2.0/glib/gchecksum.h:
 
 /usr/include/glib-2.0/glib/ghook.h:
 
@@ -425,8 +404,6 @@ gstaudiosink.h:
 
 /usr/include/glib-2.0/gobject/gboxed.h:
 
-/usr/include/glib-2.0/gobject/glib-types.h:
-
 /usr/include/glib-2.0/gobject/genums.h:
 
 /usr/include/glib-2.0/gobject/gparamspecs.h:
@@ -465,11 +442,13 @@ gstaudiosink.h:
 
 /usr/include/wchar.h:
 
-/usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
+/usr/include/bits/stdio_lim.h:
 
-/usr/include/x86_64-linux-gnu/bits/sys_errlist.h:
+/usr/include/bits/sys_errlist.h:
 
-/usr/include/x86_64-linux-gnu/bits/stdio.h:
+/usr/include/bits/stdio.h:
+
+/usr/include/bits/stdio2.h:
 
 /usr/include/libxml2/libxml/xmlstring.h:
 
@@ -499,19 +478,21 @@ gstaudiosink.h:
 
 /usr/include/libxml2/libxml/SAX.h:
 
-/usr/include/x86_64-linux-gnu/bits/waitflags.h:
+/usr/include/bits/waitflags.h:
 
-/usr/include/x86_64-linux-gnu/bits/waitstatus.h:
+/usr/include/bits/waitstatus.h:
 
-/usr/include/x86_64-linux-gnu/sys/types.h:
+/usr/include/sys/types.h:
 
-/usr/include/x86_64-linux-gnu/sys/select.h:
+/usr/include/sys/select.h:
 
-/usr/include/x86_64-linux-gnu/bits/select.h:
+/usr/include/bits/select.h:
 
-/usr/include/x86_64-linux-gnu/sys/sysmacros.h:
+/usr/include/sys/sysmacros.h:
 
 /usr/include/alloca.h:
+
+/usr/include/bits/stdlib.h:
 
 /usr/include/libxml2/libxml/xlink.h:
 
@@ -534,8 +515,6 @@ gstaudiosink.h:
 /usr/include/gstreamer-0.10/gst/gstcaps.h:
 
 /usr/include/gstreamer-0.10/gst/gststructure.h:
-
-/usr/include/gstreamer-0.10/gst/gstdatetime.h:
 
 /usr/include/gstreamer-0.10/gst/gstbufferlist.h:
 
@@ -563,9 +542,9 @@ gstaudiosink.h:
 
 /usr/include/gstreamer-0.10/gst/gstplugin.h:
 
-/usr/include/x86_64-linux-gnu/sys/stat.h:
+/usr/include/sys/stat.h:
 
-/usr/include/x86_64-linux-gnu/bits/stat.h:
+/usr/include/bits/stat.h:
 
 /usr/include/glib-2.0/gmodule.h:
 
@@ -585,11 +564,11 @@ gstaudiosink.h:
 
 /usr/include/errno.h:
 
-/usr/include/x86_64-linux-gnu/bits/errno.h:
+/usr/include/bits/errno.h:
 
 /usr/include/linux/errno.h:
 
-/usr/include/x86_64-linux-gnu/asm/errno.h:
+/usr/include/asm/errno.h:
 
 /usr/include/asm-generic/errno.h:
 
