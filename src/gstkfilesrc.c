@@ -380,10 +380,10 @@ gst_kfilesrc_set_location (GstKFileSrc * src, const gchar * location)
   gst_uri_handler_new_uri (GST_URI_HANDLER (src), src->uri);
 
   // opening the file again
-  // GST_OBJECT_LOCK (src);
-  // gst_kfilesrc_stop( (GstBaseSrc *) src );
-  // gst_kfilesrc_start( (GstBaseSrc *) src );
-  // GST_OBJECT_UNLOCK (src);
+  GST_OBJECT_LOCK (src);
+  gst_kfilesrc_stop( (GstBaseSrc *) src );
+  gst_kfilesrc_start( (GstBaseSrc *) src );
+  GST_OBJECT_UNLOCK (src);
 
   return TRUE;
 

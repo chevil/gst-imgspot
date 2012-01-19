@@ -16,8 +16,9 @@
 # adding a video source :
 # POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}  
-# POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
 # POST /inputs/add params : {channel: n, url: 'rtsp:///wowza.com:1935/app/stream.sdp'}  
+# POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
+# POST /inputs/add params : {channel: n, url: 'still:///path/image.png'}  
 # after this operation, the mixer is restarted
 
 # removing a video source :
@@ -236,6 +237,35 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.end_headers()
                return
 
+            #check if the image exists
+            if newsource[:8] == "still://":
+               if (not os.path.exists(newsource[8:]) ): 
+                 self.send_response(400, 'Bad request')
+                 self.send_header('Content-type', 'html')
+                 self.end_headers()
+                 return
+
+            #determine the size of the source
+            if newsource[:8] == "still://":
+             mixer.uri[channel]=newsource
+             self.send_response(200, 'OK')
+             self.send_header('Content-type', 'html')
+             self.end_headers()
+
+             if os.path.exists('/usr/bin/ffprobe'):
+               cmd = "/usr/bin/ffprobe -show_streams %s 2>&1 | grep width" % ( mixer.uri[channel][8:] )
+               fwidth = commands.getoutput(cmd)
+               widths = fwidth.split('=')
+               #print "Video width %s" % widths[1];
+               mixer.owidth[channel]=int(widths[1]) 
+               cmd = "ffprobe -show_streams %s 2>&1 | grep height" % ( mixer.uri[channel][8:] )
+               fheight = commands.getoutput(cmd)
+               heights = fheight.split('=')
+               #print "Video height %s" % heights[1];
+               mixer.oheight[channel]=int(heights[1])
+             else:
+               print "warning : cannot detect video size ( is ffmpeg installed ?)"
+
             mixer.launch_pipe()
 	    #mixer.player.set_state(gst.STATE_PAUSED)
 
@@ -437,7 +467,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
           else:
             channel = int( params['channel'][0] )
             url = params['url'][0]
-            if channel < 0 or channel >= nbchannels or mixer.uri[channel][:7] != "file://":
+            if channel < 0 or channel >= nbchannels or ( mixer.uri[channel][:7] != "file://" and mixer.uri[channel][:8] != "still://" ):
               self.send_response(400, 'Bad request')
               self.send_header('Content-type', 'html')
               self.end_headers()
@@ -445,9 +475,16 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             self.send_response(200, 'OK')
             self.send_header('Content-type', 'html')
             self.end_headers()
+
+            # try to load the file for still or video ( but video will fail )
+            kfilesrc=mixer.player.get_by_name("kfilesrc%d"%(channel+1))
+            if mixer.uri[channel][:7] == "file://" and url[:7] == "file://":
+               print "loading video %s" % url[7:]
+               kfilesrc.set_property( "location", url[7:] )
+            if mixer.uri[channel][:8] == "still://" and url[:8] == "still://":
+               print "loading image %s" % url[8:]
+               kfilesrc.set_property( "location", url[8:] )
             mixer.uri[channel]=url
-            mixer.launch_pipe()
-	    #mixer.player.set_state(gst.STATE_PAUSED)
 
         elif self.path == "/inputs/detect":
           if "channel" not in params or "imagedir" not in params or "minscore" not in params:
@@ -713,6 +750,9 @@ class Gst4chMixer:
                          pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
+
+                       if self.uri[i][:8] == "still://":
+                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! imagefreeze ! mix.sink_%d " % ( i+1, self.uri[i][8:], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
 
                        if self.uri[i][:9] == "device://":
                          pipecmd += " v4l2src name=v4l2src%d device=%s ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
