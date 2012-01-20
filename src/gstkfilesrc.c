@@ -353,6 +353,7 @@ static gboolean
 gst_kfilesrc_set_location (GstKFileSrc * src, const gchar * location)
 {
   GstState state;
+  gint reopen=0;
 
   /* the element must be stopped in order to do this */
   // GST_OBJECT_LOCK (src);
@@ -362,7 +363,12 @@ gst_kfilesrc_set_location (GstKFileSrc * src, const gchar * location)
   // GST_OBJECT_UNLOCK (src);
 
   // printf( "setting location the hard way\n" );
-  
+
+  if ( src->filename!=NULL && strcmp( src->filename, "" ) != 0 )
+  {
+     reopen=1;
+  }
+
   g_free (src->filename);
   g_free (src->uri);
 
@@ -379,11 +385,15 @@ gst_kfilesrc_set_location (GstKFileSrc * src, const gchar * location)
   g_object_notify (G_OBJECT (src), "location");
   gst_uri_handler_new_uri (GST_URI_HANDLER (src), src->uri);
 
-  // opening the file again
-  GST_OBJECT_LOCK (src);
-  gst_kfilesrc_stop( (GstBaseSrc *) src );
-  gst_kfilesrc_start( (GstBaseSrc *) src );
-  GST_OBJECT_UNLOCK (src);
+  if ( reopen )
+  {
+    // opening the file again
+    printf( "reopening the file\n" );
+    GST_OBJECT_LOCK (src);
+    gst_kfilesrc_stop( (GstBaseSrc *) src );
+    gst_kfilesrc_start( (GstBaseSrc *) src );
+    GST_OBJECT_UNLOCK (src);
+  }
 
   return TRUE;
 
@@ -1010,6 +1020,7 @@ gst_kfilesrc_start (GstBaseSrc * basesrc)
     goto no_filename;
 
   GST_INFO_OBJECT (src, "opening file %s", src->filename);
+  printf ("opening file %s\n", src->filename);
 
   /* open the file */
   src->fd = gst_open (src->filename, O_RDONLY | O_BINARY, 0);
@@ -1029,6 +1040,7 @@ gst_kfilesrc_start (GstBaseSrc * basesrc)
 
   src->using_mmap = FALSE;
   src->read_position = 0;
+  printf ("read position %ld\n", src->read_position);
   src->size = stat_results.st_size;
 
   /* record if it's a regular (hence seekable and lengthable) file */
@@ -1054,8 +1066,7 @@ gst_kfilesrc_start (GstBaseSrc * basesrc)
     off_t res = lseek (src->fd, 0, SEEK_END);
 
     if (res < 0) {
-      GST_LOG_OBJECT (src, "disabling seeking, not in mmap mode and lseek "
-          "failed: %s", g_strerror (errno));
+      GST_LOG_OBJECT (src, "disabling seeking, not in mmap mode and lseek failed: %s", g_strerror (errno));
       src->seekable = FALSE;
     } else {
       src->seekable = TRUE;

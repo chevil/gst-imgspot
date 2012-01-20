@@ -143,12 +143,12 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
              self.end_headers()
 
              if os.path.exists('/usr/bin/ffprobe'):
-               cmd = "/usr/bin/ffprobe -show_streams %s 2>&1 | grep width" % ( mixer.uri[channel][7:] )
+               cmd = "/usr/bin/ffprobe -show_streams \"%s\" 2>&1 | grep width" % ( mixer.uri[channel][7:] )
                fwidth = commands.getoutput(cmd)
                widths = fwidth.split('=')
                #print "Video width %s" % widths[1];
                mixer.owidth[channel]=int(widths[1]) 
-               cmd = "ffprobe -show_streams %s 2>&1 | grep height" % ( mixer.uri[channel][7:] )
+               cmd = "ffprobe -show_streams \"%s\" 2>&1 | grep height" % ( mixer.uri[channel][7:] )
                fheight = commands.getoutput(cmd)
                heights = fheight.split('=')
                #print "Video height %s" % heights[1];
@@ -472,19 +472,27 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
               self.send_header('Content-type', 'html')
               self.end_headers()
               return
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'html')
-            self.end_headers()
 
             # try to load the file for still or video ( but video will fail )
             kfilesrc=mixer.player.get_by_name("kfilesrc%d"%(channel+1))
             if mixer.uri[channel][:7] == "file://" and url[:7] == "file://":
-               print "loading video %s" % url[7:]
                kfilesrc.set_property( "location", url[7:] )
+               mixer.uri[channel]=url
+               self.send_response(200, 'OK')
+               self.send_header('Content-type', 'html')
+               self.end_headers()
+               return
             if mixer.uri[channel][:8] == "still://" and url[:8] == "still://":
-               print "loading image %s" % url[8:]
                kfilesrc.set_property( "location", url[8:] )
-            mixer.uri[channel]=url
+               mixer.uri[channel]=url
+               self.send_response(200, 'OK')
+               self.send_header('Content-type', 'html')
+               self.end_headers()
+               return
+
+            self.send_response(400, 'Bad request')
+            self.send_header('Content-type', 'html')
+            self.end_headers()
 
         elif self.path == "/inputs/detect":
           if "channel" not in params or "imagedir" not in params or "minscore" not in params:
