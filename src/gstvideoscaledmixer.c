@@ -308,7 +308,8 @@ gst_videoscaledmixer_do_qos (GstVideoScaledMixer * mix, GstClockTime timestamp)
 
   if (qostime != GST_CLOCK_TIME_NONE && qostime <= earliest_time) {
     GST_DEBUG_OBJECT (mix, "we are late, drop frame");
-    return FALSE;
+    return TRUE;
+    // return FALSE;
   }
 
   GST_LOG_OBJECT (mix, "process frame");
@@ -1494,12 +1495,9 @@ gst_videoscaledmixer_collected (GstCollectPads * pads, GstVideoScaledMixer * mix
   /* allocate an output buffer */
   outsize =
       gst_video_format_get_size (mix->fmt, mix->out_width, mix->out_height);
-  GST_LOG_OBJECT (mix, "buffer out size %d", outsize);
-  GST_LOG_OBJECT (mix, "allocating buffer with caps %" GST_PTR_FORMAT, GST_PAD_CAPS (mix->srcpad) );
   ret =
       gst_pad_alloc_buffer_and_set_caps (mix->srcpad, GST_BUFFER_OFFSET_NONE,
       outsize, GST_PAD_CAPS (mix->srcpad), &outbuf);
-  GST_LOG_OBJECT (mix, "set caps returns %d", ret);
 
   if (ret != GST_FLOW_OK) {
     goto error;
@@ -1514,6 +1512,7 @@ gst_videoscaledmixer_collected (GstCollectPads * pads, GstVideoScaledMixer * mix
   GST_VIDEO_SCALED_MIXER_STATE_UNLOCK (mix);
 
   ret = gst_pad_push (mix->srcpad, outbuf);
+  GST_LOG_OBJECT (mix, "buffer sent");
 
 beach:
   return ret;

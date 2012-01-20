@@ -190,7 +190,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
 
             if newsource[:7] == "rtsp://" or newsource[:7] == "rtmp://":
              if os.path.exists('/usr/bin/mplayer'):
-               process = subprocess.Popen(['/usr/bin/mplayer','-endpos','1','-vo','null', '-nosound', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+               process = subprocess.Popen(['/usr/bin/mplayer','-endpos', '1', '-vo', 'null', '-ao', 'null', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                streamis=False
                pv = re.compile('VO:')
                pa = re.compile('AO:')
@@ -222,7 +222,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
 
             if newsource[:7] == "http://":
              if os.path.exists('/usr/bin/mplayer'):
-               process = subprocess.Popen(['/usr/bin/mplayer','-endpos','1','-vo','null', '-nosound', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+               process = subprocess.Popen(['/usr/bin/mplayer','-endpos', '1', '-vo', 'null', '-ao', 'null', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                streamis=False
                pv = re.compile('VO:')
                pa = re.compile('AO:')
