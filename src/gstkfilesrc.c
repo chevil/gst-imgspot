@@ -388,7 +388,6 @@ gst_kfilesrc_set_location (GstKFileSrc * src, const gchar * location)
   if ( reopen )
   {
     // opening the file again
-    printf( "reopening the file\n" );
     GST_OBJECT_LOCK (src);
     gst_kfilesrc_stop( (GstBaseSrc *) src );
     gst_kfilesrc_start( (GstBaseSrc *) src );
@@ -1020,7 +1019,6 @@ gst_kfilesrc_start (GstBaseSrc * basesrc)
     goto no_filename;
 
   GST_INFO_OBJECT (src, "opening file %s", src->filename);
-  printf ("opening file %s\n", src->filename);
 
   /* open the file */
   src->fd = gst_open (src->filename, O_RDONLY | O_BINARY, 0);
@@ -1040,7 +1038,6 @@ gst_kfilesrc_start (GstBaseSrc * basesrc)
 
   src->using_mmap = FALSE;
   src->read_position = 0;
-  printf ("read position %ld\n", src->read_position);
   src->size = stat_results.st_size;
 
   /* record if it's a regular (hence seekable and lengthable) file */

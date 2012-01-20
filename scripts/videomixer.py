@@ -476,18 +476,43 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
             # try to load the file for still or video ( but video will fail )
             kfilesrc=mixer.player.get_by_name("kfilesrc%d"%(channel+1))
             if mixer.uri[channel][:7] == "file://" and url[:7] == "file://":
+               mixer.uri[channel]=url
+               self.send_response(200, 'OK')
+               self.send_header('Content-type', 'html')
+               self.end_headers()
+
+	       mixer.player.set_state(gst.STATE_PAUSED)
+               event = gst.event_new_seek(1.0, gst.FORMAT_TIME,
+                    gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
+                    gst.SEEK_TYPE_SET, 0,
+                    gst.SEEK_TYPE_SET, 0)
+
+               res = mixer.player.send_event(event)
+               if res:
+                   mixer.player.set_new_stream_time(0L)
                kfilesrc.set_property( "location", url[7:] )
-               mixer.uri[channel]=url
-               self.send_response(200, 'OK')
-               self.send_header('Content-type', 'html')
-               self.end_headers()
+	       mixer.player.set_state(gst.STATE_PLAYING)
+
                return
+
             if mixer.uri[channel][:8] == "still://" and url[:8] == "still://":
-               kfilesrc.set_property( "location", url[8:] )
                mixer.uri[channel]=url
                self.send_response(200, 'OK')
                self.send_header('Content-type', 'html')
                self.end_headers()
+
+	       mixer.player.set_state(gst.STATE_PAUSED)
+               event = gst.event_new_seek(1.0, gst.FORMAT_TIME,
+                    gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
+                    gst.SEEK_TYPE_SET, 0,
+                    gst.SEEK_TYPE_SET, 0)
+
+               res = mixer.player.send_event(event)
+               if res:
+                   mixer.player.set_new_stream_time(0L)
+               kfilesrc.set_property( "location", url[8:] )
+	       mixer.player.set_state(gst.STATE_PLAYING)
+
                return
 
             self.send_response(400, 'Bad request')
