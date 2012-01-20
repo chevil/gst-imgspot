@@ -22,6 +22,8 @@
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}
 # POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}
 # POST /inputs/add params : {channel: n, url: 'rtsp:///wowza.com:1935/app/stream.sdp'}
+# POST /inputs/add params : {channel: n, url: 'rtmp:///wowza.com:1935/app/stream.sdp'}
+# POST /inputs/add params : {channel: n, url: 'still:///path/image.png'}
 # after this operation, the mixer is restarted
 
 @node.js command : node addsource.js 0 device:///dev/video0
