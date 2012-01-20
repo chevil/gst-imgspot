@@ -154,6 +154,12 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                heights = fheight.split('=')
                #print "Video height %s" % heights[1];
                mixer.oheight[channel]=int(heights[1])
+               cmd = "ffprobe -show_streams \"%s\" 2>&1 | grep audio" % ( mixer.uri[channel][7:] )
+               audio = commands.getoutput(cmd)
+               if audio == "codec_type=audio":
+                  mixer.noaudio[channel]=False
+               else:
+                  mixer.noaudio[channel]=True
              else:
                print "warning : cannot detect video size ( is ffmpeg installed ?)"
 
@@ -186,9 +192,11 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
              if os.path.exists('/usr/bin/mplayer'):
                process = subprocess.Popen(['/usr/bin/mplayer','-endpos','1','-vo','null', '-nosound', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                streamis=False
+               pv = re.compile('VO:')
+               pa = re.compile('AO:')
+               mixer.noaudio[channel]=True
                for line in process.stdout:
-                  p = re.compile('VO')
-                  if p.match( line ):
+                  if pv.match( line ):
                     sizes=line.split(' '); 
                     wihe=sizes[2].split('x'); 
                     mixer.uri[channel]=newsource
@@ -198,6 +206,8 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'html')
                     self.end_headers()
                     streamis=True
+                  if pa.match( line ):
+                    mixer.noaudio[channel]=False
                if not streamis:
                     self.send_response(400, 'Bad request')
                     self.send_header('Content-type', 'html')
@@ -214,9 +224,11 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
              if os.path.exists('/usr/bin/mplayer'):
                process = subprocess.Popen(['/usr/bin/mplayer','-endpos','1','-vo','null', '-nosound', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                streamis=False
+               pv = re.compile('VO:')
+               pa = re.compile('AO:')
+               mixer.noaudio[channel]=True
                for line in process.stdout:
-                  p = re.compile('VO')
-                  if p.match( line ):
+                  if pv.match( line ):
                     sizes=line.split(' '); 
                     wihe=sizes[2].split('x'); 
                     mixer.uri[channel]=newsource
@@ -226,6 +238,8 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                     self.send_header('Content-type', 'html')
                     self.end_headers()
                     streamis=True
+                  if pv.match( line ):
+                    mixer.noaudio[channel]=False
                if not streamis:
                     self.send_response(400, 'Bad request')
                     self.send_header('Content-type', 'html')
@@ -640,6 +654,7 @@ class Gst4chMixer:
                 self.pattern=[]
                 self.imagedir=[]
                 self.minscore=[]
+                self.noaudio=[]
                 self.pattern.append( "snow" )
                 self.pattern.append( "red" )
                 self.pattern.append( "blue" )
@@ -655,6 +670,7 @@ class Gst4chMixer:
                    self.zorder.append( i+1 );
                    self.imagedir.append( "" );
                    self.minscore.append( 0 );
+                   self.noaudio.append( False );
 
                 self.txsize=gwidth
                 self.tysize=gheight
@@ -782,7 +798,7 @@ class Gst4chMixer:
 
                        if self.uri[i][:7] == "file://":
                          pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
-                         if nosound==False: 
+                         if nosound==False and self.noaudio[i]==False: 
                             pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
 
                        if self.uri[i][:8] == "still://":
@@ -793,12 +809,12 @@ class Gst4chMixer:
 
                        if self.uri[i][:7] == "http://":
                          pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! ffmpegcolorspace ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
-                         if nosound==False: 
+                         if nosound==False and self.noaudio[i]==False: 
                             pipecmd += " decodebin%d. ! audioresample ! audiomix. " % ( i+1 ) 
 
                        if self.uri[i][:7] == "rtsp://" or self.uri[i][:7] == "rtmp://":
                          pipecmd += " uridecodebin uri=\"%s\" name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
-                         if nosound==False: 
+                         if nosound==False and self.noaudio[i]==False: 
                             pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
 
                 if ( self.icehost != "" ):
@@ -855,14 +871,16 @@ def main(args):
     nbchannels = int(args[1])
     gwidth = int(args[2])
     gheight = int(args[3])
+    nosound=False
+    novideo=False
     if len(args)>=5 and args[4]=='nosound':
       nosound=True 
-    else:
-      nosound=False
+    if len(args)>=6 and args[5]=='nosound':
+      nosound=True 
     if len(args)>=5 and args[4]=='novideo':
       novideo=True 
-    else:
-      novideo=False
+    if len(args)>=6 and args[5]=='novideo':
+      novideo=True 
 
     # build the window
     mixer = Gst4chMixer()
