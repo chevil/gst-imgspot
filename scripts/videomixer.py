@@ -17,6 +17,7 @@
 # POST /inputs/add params : {channel: n, url: 'file:///path/video.avi'}
 # POST /inputs/add params : {channel: n, url: 'device:///dev/video0'}  
 # POST /inputs/add params : {channel: n, url: 'rtsp:///wowza.com:1935/app/stream.sdp'}  
+# POST /inputs/add params : {channel: n, url: 'rtmp:///wowza.com:1935/app/stream.sdp'}  
 # POST /inputs/add params : {channel: n, url: 'http:///server.com:8000/videostream.mpg'}  
 # POST /inputs/add params : {channel: n, url: 'still:///path/image.png'}  
 # after this operation, the mixer is restarted
@@ -181,7 +182,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                self.end_headers()
                return
 
-            if newsource[:7] == "rtsp://":
+            if newsource[:7] == "rtsp://" or newsource[:7] == "rtmp://":
              if os.path.exists('/usr/bin/mplayer'):
                process = subprocess.Popen(['/usr/bin/mplayer','-endpos','1','-vo','null', '-nosound', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                streamis=False
@@ -795,8 +796,8 @@ class Gst4chMixer:
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audioresample ! audiomix. " % ( i+1 ) 
 
-                       if self.uri[i][:7] == "rtsp://":
-                         pipecmd += " rtspsrc location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
+                       if self.uri[i][:7] == "rtsp://" or self.uri[i][:7] == "rtmp://":
+                         pipecmd += " uridecodebin uri=\"%s\" name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
                          if nosound==False: 
                             pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
 
