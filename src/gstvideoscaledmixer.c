@@ -1311,6 +1311,9 @@ gst_videoscaledmixer_blend_buffers (GstVideoScaledMixer * mix, GstBuffer * outbu
     int px, py;
     int rx, ry;
     int pzorder;
+    struct timeval startt, endt;
+
+    gettimeofday( &startt, NULL );
 
     // for all output pixel
     for ( py=0; py<mix->out_height; py++ )
@@ -1342,14 +1345,26 @@ gst_videoscaledmixer_blend_buffers (GstVideoScaledMixer * mix, GstBuffer * outbu
 
         if ( pYData != NULL )
         {
-           rx = (int)((double)(px-cpad->xpos)*(double)cpad->in_width/(double)cpad->owidth);
-           ry = (int)((double)(py-cpad->ypos)*(double)cpad->in_height/(double)cpad->oheight);
+           if ( ( cpad->in_width != cpad->owidth ) || ( cpad->in_height != cpad->oheight ) )
+           {
+             rx = (int)((double)(px-cpad->xpos)*(double)cpad->in_width/(double)cpad->owidth);
+             ry = (int)((double)(py-cpad->ypos)*(double)cpad->in_height/(double)cpad->oheight);
+           }
+           else
+           {
+              rx = px;
+              ry = py;
+           }
            *(pYOutputData+py*mix->out_width+px) = *(pYData+ry*cpad->in_width+rx)*(cpad->alpha);
            *(pUOutputData+(py>>1)*(mix->out_width>>1)+(px>>1)) = *(pUData+(ry>>1)*(cpad->in_width>>1)+(rx>>1));
            *(pVOutputData+(py>>1)*(mix->out_width>>1)+(px>>1)) = *(pVData+(ry>>1)*(cpad->in_width>>1)+(rx>>1));
         }
       }
     }
+
+    gettimeofday( &endt, NULL );
+    printf( "mixer loop took %ld\n", (endt.tv_sec-startt.tv_sec)*1000000+(endt.tv_usec-startt.tv_usec) );
+
   }
   else
   {
