@@ -1363,7 +1363,7 @@ gst_videoscaledmixer_blend_buffers (GstVideoScaledMixer * mix, GstBuffer * outbu
     }
 
     gettimeofday( &endt, NULL );
-    printf( "mixer loop took %ld\n", (endt.tv_sec-startt.tv_sec)*1000000+(endt.tv_usec-startt.tv_usec) );
+    GST_DEBUG_OBJECT ( mix, "mixer loop took %ld\n", (endt.tv_sec-startt.tv_sec)*1000000+(endt.tv_usec-startt.tv_usec) );
 
   }
   else

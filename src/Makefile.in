@@ -98,6 +98,15 @@ libgstkfilesrc_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libgstkfilesrc_la_CFLAGS) $(CFLAGS) \
 	$(libgstkfilesrc_la_LDFLAGS) $(LDFLAGS) -o $@
+libgstrtsp_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_libgstrtsp_la_OBJECTS = libgstrtsp_la-gstrtpdec.lo \
+	libgstrtsp_la-gstrtsp.lo libgstrtsp_la-gstrtspext.lo \
+	libgstrtsp_la-gstrtspsrc.lo
+libgstrtsp_la_OBJECTS = $(am_libgstrtsp_la_OBJECTS)
+libgstrtsp_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libgstrtsp_la_CFLAGS) \
+	$(CFLAGS) $(libgstrtsp_la_LDFLAGS) $(LDFLAGS) -o $@
 libgstvideoscaledmixer_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_libgstvideoscaledmixer_la_OBJECTS =  \
@@ -122,10 +131,10 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(libgstaudio_la_SOURCES) $(libgstimgspot_la_SOURCES) \
-	$(libgstkfilesrc_la_SOURCES) \
+	$(libgstkfilesrc_la_SOURCES) $(libgstrtsp_la_SOURCES) \
 	$(libgstvideoscaledmixer_la_SOURCES)
 DIST_SOURCES = $(libgstaudio_la_SOURCES) $(libgstimgspot_la_SOURCES) \
-	$(libgstkfilesrc_la_SOURCES) \
+	$(libgstkfilesrc_la_SOURCES) $(libgstrtsp_la_SOURCES) \
 	$(libgstvideoscaledmixer_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -150,6 +159,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
@@ -184,6 +194,7 @@ LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -214,6 +225,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -247,7 +259,6 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
-lt_ECHO = @lt_ECHO@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
@@ -264,12 +275,13 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la libgstvideoscaledmixer.la libgstaudio.la
+plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la libgstvideoscaledmixer.la libgstrtsp.la libgstaudio.la
 
 # sources used to compile this plug-in
 libgstimgspot_la_SOURCES = gstimgspot.c
-libgstkfilesrc_la_SOURCES = gstkfilesrc.c
 libgstvideoscaledmixer_la_SOURCES = gstvideoscaledmixer.c
+libgstkfilesrc_la_SOURCES = gstkfilesrc.c
+libgstrtsp_la_SOURCES = gstrtpdec.c  gstrtsp.c  gstrtspext.c  gstrtspsrc.c
 libgstaudio_la_SOURCES = audio.c gstringbuffer.c gstaudioclock.c mixerutils.c multichannel.c gstbaseaudiosink.c gstbaseaudiosrc.c gstaudiofilter.c gstaudiosink.c gstaudiosrc.c audio-enumtypes.c
 libgstimgspot_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstimgspot_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
@@ -280,6 +292,9 @@ libgstkfilesrc_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 libgstvideoscaledmixer_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstvideoscaledmixer_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstvideoscaledmixer_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+libgstrtsp_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
+libgstrtsp_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
+libgstrtsp_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 libgstaudio_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstaudio_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstaudio_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
@@ -354,6 +369,8 @@ libgstimgspot.la: $(libgstimgspot_la_OBJECTS) $(libgstimgspot_la_DEPENDENCIES)
 	$(libgstimgspot_la_LINK) -rpath $(plugindir) $(libgstimgspot_la_OBJECTS) $(libgstimgspot_la_LIBADD) $(LIBS)
 libgstkfilesrc.la: $(libgstkfilesrc_la_OBJECTS) $(libgstkfilesrc_la_DEPENDENCIES) 
 	$(libgstkfilesrc_la_LINK) -rpath $(plugindir) $(libgstkfilesrc_la_OBJECTS) $(libgstkfilesrc_la_LIBADD) $(LIBS)
+libgstrtsp.la: $(libgstrtsp_la_OBJECTS) $(libgstrtsp_la_DEPENDENCIES) 
+	$(libgstrtsp_la_LINK) -rpath $(plugindir) $(libgstrtsp_la_OBJECTS) $(libgstrtsp_la_LIBADD) $(LIBS)
 libgstvideoscaledmixer.la: $(libgstvideoscaledmixer_la_OBJECTS) $(libgstvideoscaledmixer_la_DEPENDENCIES) 
 	$(libgstvideoscaledmixer_la_LINK) -rpath $(plugindir) $(libgstvideoscaledmixer_la_OBJECTS) $(libgstvideoscaledmixer_la_LIBADD) $(LIBS)
 
@@ -376,6 +393,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstaudio_la-multichannel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstimgspot_la-gstimgspot.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstkfilesrc_la-gstkfilesrc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstrtsp_la-gstrtpdec.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstrtsp_la-gstrtsp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstrtsp_la-gstrtspext.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstrtsp_la-gstrtspsrc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Plo@am__quote@
 
 .c.o:
@@ -489,6 +510,34 @@ libgstkfilesrc_la-gstkfilesrc.lo: gstkfilesrc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gstkfilesrc.c' object='libgstkfilesrc_la-gstkfilesrc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstkfilesrc_la_CFLAGS) $(CFLAGS) -c -o libgstkfilesrc_la-gstkfilesrc.lo `test -f 'gstkfilesrc.c' || echo '$(srcdir)/'`gstkfilesrc.c
+
+libgstrtsp_la-gstrtpdec.lo: gstrtpdec.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -MT libgstrtsp_la-gstrtpdec.lo -MD -MP -MF $(DEPDIR)/libgstrtsp_la-gstrtpdec.Tpo -c -o libgstrtsp_la-gstrtpdec.lo `test -f 'gstrtpdec.c' || echo '$(srcdir)/'`gstrtpdec.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libgstrtsp_la-gstrtpdec.Tpo $(DEPDIR)/libgstrtsp_la-gstrtpdec.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gstrtpdec.c' object='libgstrtsp_la-gstrtpdec.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -c -o libgstrtsp_la-gstrtpdec.lo `test -f 'gstrtpdec.c' || echo '$(srcdir)/'`gstrtpdec.c
+
+libgstrtsp_la-gstrtsp.lo: gstrtsp.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -MT libgstrtsp_la-gstrtsp.lo -MD -MP -MF $(DEPDIR)/libgstrtsp_la-gstrtsp.Tpo -c -o libgstrtsp_la-gstrtsp.lo `test -f 'gstrtsp.c' || echo '$(srcdir)/'`gstrtsp.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libgstrtsp_la-gstrtsp.Tpo $(DEPDIR)/libgstrtsp_la-gstrtsp.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gstrtsp.c' object='libgstrtsp_la-gstrtsp.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -c -o libgstrtsp_la-gstrtsp.lo `test -f 'gstrtsp.c' || echo '$(srcdir)/'`gstrtsp.c
+
+libgstrtsp_la-gstrtspext.lo: gstrtspext.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -MT libgstrtsp_la-gstrtspext.lo -MD -MP -MF $(DEPDIR)/libgstrtsp_la-gstrtspext.Tpo -c -o libgstrtsp_la-gstrtspext.lo `test -f 'gstrtspext.c' || echo '$(srcdir)/'`gstrtspext.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libgstrtsp_la-gstrtspext.Tpo $(DEPDIR)/libgstrtsp_la-gstrtspext.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gstrtspext.c' object='libgstrtsp_la-gstrtspext.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -c -o libgstrtsp_la-gstrtspext.lo `test -f 'gstrtspext.c' || echo '$(srcdir)/'`gstrtspext.c
+
+libgstrtsp_la-gstrtspsrc.lo: gstrtspsrc.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -MT libgstrtsp_la-gstrtspsrc.lo -MD -MP -MF $(DEPDIR)/libgstrtsp_la-gstrtspsrc.Tpo -c -o libgstrtsp_la-gstrtspsrc.lo `test -f 'gstrtspsrc.c' || echo '$(srcdir)/'`gstrtspsrc.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libgstrtsp_la-gstrtspsrc.Tpo $(DEPDIR)/libgstrtsp_la-gstrtspsrc.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gstrtspsrc.c' object='libgstrtsp_la-gstrtspsrc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -c -o libgstrtsp_la-gstrtspsrc.lo `test -f 'gstrtspsrc.c' || echo '$(srcdir)/'`gstrtspsrc.c
 
 libgstvideoscaledmixer_la-gstvideoscaledmixer.lo: gstvideoscaledmixer.c
 @am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -MT libgstvideoscaledmixer_la-gstvideoscaledmixer.lo -MD -MP -MF $(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Tpo -c -o libgstvideoscaledmixer_la-gstvideoscaledmixer.lo `test -f 'gstvideoscaledmixer.c' || echo '$(srcdir)/'`gstvideoscaledmixer.c

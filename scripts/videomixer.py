@@ -209,6 +209,7 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                   if pa.match( line ):
                     mixer.noaudio[channel]=False
                if not streamis:
+                    mixer.uri[channel]=newsource
                     self.send_response(400, 'Bad request')
                     self.send_header('Content-type', 'html')
                     self.end_headers()

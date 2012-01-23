@@ -32,8 +32,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = i686-pc-linux-gnu
-host_triplet = i686-pc-linux-gnu
+build_triplet = x86_64-unknown-linux-gnu
+host_triplet = x86_64-unknown-linux-gnu
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,6 +98,15 @@ libgstkfilesrc_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libgstkfilesrc_la_CFLAGS) $(CFLAGS) \
 	$(libgstkfilesrc_la_LDFLAGS) $(LDFLAGS) -o $@
+libgstrtsp_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_libgstrtsp_la_OBJECTS = libgstrtsp_la-gstrtpdec.lo \
+	libgstrtsp_la-gstrtsp.lo libgstrtsp_la-gstrtspext.lo \
+	libgstrtsp_la-gstrtspsrc.lo
+libgstrtsp_la_OBJECTS = $(am_libgstrtsp_la_OBJECTS)
+libgstrtsp_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libgstrtsp_la_CFLAGS) \
+	$(CFLAGS) $(libgstrtsp_la_LDFLAGS) $(LDFLAGS) -o $@
 libgstvideoscaledmixer_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_libgstvideoscaledmixer_la_OBJECTS =  \
@@ -122,21 +131,21 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(libgstaudio_la_SOURCES) $(libgstimgspot_la_SOURCES) \
-	$(libgstkfilesrc_la_SOURCES) \
+	$(libgstkfilesrc_la_SOURCES) $(libgstrtsp_la_SOURCES) \
 	$(libgstvideoscaledmixer_la_SOURCES)
 DIST_SOURCES = $(libgstaudio_la_SOURCES) $(libgstimgspot_la_SOURCES) \
-	$(libgstkfilesrc_la_SOURCES) \
+	$(libgstkfilesrc_la_SOURCES) $(libgstrtsp_la_SOURCES) \
 	$(libgstvideoscaledmixer_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /usr/src/gst-imgspot/missing --run aclocal-1.11
+ACLOCAL = ${SHELL} /home/chevil/dev/gst-imgspot/missing --run aclocal-1.11
 ACLOCAL_AMFLAGS = -I m4
-AMTAR = ${SHELL} /usr/src/gst-imgspot/missing --run tar
+AMTAR = ${SHELL} /home/chevil/dev/gst-imgspot/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /usr/src/gst-imgspot/missing --run autoconf
-AUTOHEADER = ${SHELL} /usr/src/gst-imgspot/missing --run autoheader
-AUTOMAKE = ${SHELL} /usr/src/gst-imgspot/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/chevil/dev/gst-imgspot/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/chevil/dev/gst-imgspot/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/chevil/dev/gst-imgspot/missing --run automake-1.11
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -150,6 +159,7 @@ CXXFLAGS = -g -O2
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
+DLLTOOL = false
 DSYMUTIL = 
 DUMPBIN = 
 ECHO_C = 
@@ -161,12 +171,12 @@ FGREP = /bin/grep -F
 GREP = /bin/grep
 GSTCTRL_CFLAGS = 
 GSTCTRL_LIBS = 
-GSTPB_BASE_CFLAGS = -pthread -I/usr/include/gstreamer-0.10 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/libxml2  
+GSTPB_BASE_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gstreamer-0.10 -I/usr/include/libxml2  
 GSTPB_BASE_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0  
-GST_BASE_CFLAGS = -pthread -I/usr/include/gstreamer-0.10 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/libxml2  
+GST_BASE_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gstreamer-0.10 -I/usr/include/libxml2  
 GST_BASE_LIBS = -pthread -lgstbase-0.10 -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0  
-GST_CFLAGS = -pthread -I/usr/include/gstreamer-0.10 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/libxml2  
-GST_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0   -lgstcontroller-0.10 -lgstbase-0.10 -lgstvideo-0.10 -lgstinterfaces-0.10
+GST_CFLAGS = -pthread -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/gstreamer-0.10 -I/usr/include/libxml2  
+GST_LIBS = -pthread -lgstreamer-0.10 -lgobject-2.0 -lgmodule-2.0 -lxml2 -lgthread-2.0 -lrt -lglib-2.0   -lgstcontroller-0.10 -lgstbase-0.10 -lgstvideo-0.10 -lgstinterfaces-0.10 -lgstinterfaces-0.10 -lgstrtp-0.10 -lgstrtsp-0.10 -lgstsdp-0.10
 GST_MAJORMINOR = 0.10
 GST_PLUGIN_LDFLAGS = -module -avoid-version -export-symbols-regex _*\(gst_\|Gst\|GST_\).*
 HAVE_PKGCONFIG = yes
@@ -175,7 +185,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
-LD = /usr/bin/ld
+LD = /usr/bin/ld -m elf_x86_64
 LDFLAGS = 
 LIBOBJS = 
 LIBS = 
@@ -183,7 +193,8 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /usr/src/gst-imgspot/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/chevil/dev/gst-imgspot/missing --run makeinfo
+MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
 NMEDIT = 
@@ -210,10 +221,11 @@ SET_MAKE =
 SHELL = /bin/bash
 STRIP = strip
 VERSION = 
-abs_builddir = /usr/src/gst-imgspot/src
-abs_srcdir = /usr/src/gst-imgspot/src
-abs_top_builddir = /usr/src/gst-imgspot
-abs_top_srcdir = /usr/src/gst-imgspot
+abs_builddir = /home/chevil/dev/gst-imgspot/src
+abs_srcdir = /home/chevil/dev/gst-imgspot/src
+abs_top_builddir = /home/chevil/dev/gst-imgspot
+abs_top_srcdir = /home/chevil/dev/gst-imgspot
+ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_DUMPBIN = 
@@ -223,31 +235,30 @@ am__quote =
 am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
-build = i686-pc-linux-gnu
+build = x86_64-unknown-linux-gnu
 build_alias = 
-build_cpu = i686
+build_cpu = x86_64
 build_os = linux-gnu
-build_vendor = pc
+build_vendor = unknown
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = i686-pc-linux-gnu
+host = x86_64-unknown-linux-gnu
 host_alias = 
-host_cpu = i686
+host_cpu = x86_64
 host_os = linux-gnu
-host_vendor = pc
+host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /usr/src/gst-imgspot/install-sh
+install_sh = ${SHELL} /home/chevil/dev/gst-imgspot/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
 localstatedir = ${prefix}/var
-lt_ECHO = echo
 mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
@@ -264,12 +275,13 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la libgstvideoscaledmixer.la libgstaudio.la
+plugin_LTLIBRARIES = libgstimgspot.la libgstkfilesrc.la libgstvideoscaledmixer.la libgstrtsp.la libgstaudio.la
 
 # sources used to compile this plug-in
 libgstimgspot_la_SOURCES = gstimgspot.c
-libgstkfilesrc_la_SOURCES = gstkfilesrc.c
 libgstvideoscaledmixer_la_SOURCES = gstvideoscaledmixer.c
+libgstkfilesrc_la_SOURCES = gstkfilesrc.c
+libgstrtsp_la_SOURCES = gstrtpdec.c  gstrtsp.c  gstrtspext.c  gstrtspsrc.c
 libgstaudio_la_SOURCES = audio.c gstringbuffer.c gstaudioclock.c mixerutils.c multichannel.c gstbaseaudiosink.c gstbaseaudiosrc.c gstaudiofilter.c gstaudiosink.c gstaudiosrc.c audio-enumtypes.c
 libgstimgspot_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstimgspot_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
@@ -280,6 +292,9 @@ libgstkfilesrc_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 libgstvideoscaledmixer_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstvideoscaledmixer_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstvideoscaledmixer_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+libgstrtsp_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
+libgstrtsp_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
+libgstrtsp_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 libgstaudio_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(OPENCV_CFLAGS) $(ORC_CFLAGS) -I.
 libgstaudio_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(OPENCV_LIBS) $(ORC_LIBS)
 libgstaudio_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
@@ -354,6 +369,8 @@ libgstimgspot.la: $(libgstimgspot_la_OBJECTS) $(libgstimgspot_la_DEPENDENCIES)
 	$(libgstimgspot_la_LINK) -rpath $(plugindir) $(libgstimgspot_la_OBJECTS) $(libgstimgspot_la_LIBADD) $(LIBS)
 libgstkfilesrc.la: $(libgstkfilesrc_la_OBJECTS) $(libgstkfilesrc_la_DEPENDENCIES) 
 	$(libgstkfilesrc_la_LINK) -rpath $(plugindir) $(libgstkfilesrc_la_OBJECTS) $(libgstkfilesrc_la_LIBADD) $(LIBS)
+libgstrtsp.la: $(libgstrtsp_la_OBJECTS) $(libgstrtsp_la_DEPENDENCIES) 
+	$(libgstrtsp_la_LINK) -rpath $(plugindir) $(libgstrtsp_la_OBJECTS) $(libgstrtsp_la_LIBADD) $(LIBS)
 libgstvideoscaledmixer.la: $(libgstvideoscaledmixer_la_OBJECTS) $(libgstvideoscaledmixer_la_DEPENDENCIES) 
 	$(libgstvideoscaledmixer_la_LINK) -rpath $(plugindir) $(libgstvideoscaledmixer_la_OBJECTS) $(libgstvideoscaledmixer_la_LIBADD) $(LIBS)
 
@@ -376,6 +393,10 @@ include ./$(DEPDIR)/libgstaudio_la-mixerutils.Plo
 include ./$(DEPDIR)/libgstaudio_la-multichannel.Plo
 include ./$(DEPDIR)/libgstimgspot_la-gstimgspot.Plo
 include ./$(DEPDIR)/libgstkfilesrc_la-gstkfilesrc.Plo
+include ./$(DEPDIR)/libgstrtsp_la-gstrtpdec.Plo
+include ./$(DEPDIR)/libgstrtsp_la-gstrtsp.Plo
+include ./$(DEPDIR)/libgstrtsp_la-gstrtspext.Plo
+include ./$(DEPDIR)/libgstrtsp_la-gstrtspsrc.Plo
 include ./$(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Plo
 
 .c.o:
@@ -489,6 +510,34 @@ libgstkfilesrc_la-gstkfilesrc.lo: gstkfilesrc.c
 #	source='gstkfilesrc.c' object='libgstkfilesrc_la-gstkfilesrc.lo' libtool=yes \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstkfilesrc_la_CFLAGS) $(CFLAGS) -c -o libgstkfilesrc_la-gstkfilesrc.lo `test -f 'gstkfilesrc.c' || echo '$(srcdir)/'`gstkfilesrc.c
+
+libgstrtsp_la-gstrtpdec.lo: gstrtpdec.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -MT libgstrtsp_la-gstrtpdec.lo -MD -MP -MF $(DEPDIR)/libgstrtsp_la-gstrtpdec.Tpo -c -o libgstrtsp_la-gstrtpdec.lo `test -f 'gstrtpdec.c' || echo '$(srcdir)/'`gstrtpdec.c
+	$(am__mv) $(DEPDIR)/libgstrtsp_la-gstrtpdec.Tpo $(DEPDIR)/libgstrtsp_la-gstrtpdec.Plo
+#	source='gstrtpdec.c' object='libgstrtsp_la-gstrtpdec.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -c -o libgstrtsp_la-gstrtpdec.lo `test -f 'gstrtpdec.c' || echo '$(srcdir)/'`gstrtpdec.c
+
+libgstrtsp_la-gstrtsp.lo: gstrtsp.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -MT libgstrtsp_la-gstrtsp.lo -MD -MP -MF $(DEPDIR)/libgstrtsp_la-gstrtsp.Tpo -c -o libgstrtsp_la-gstrtsp.lo `test -f 'gstrtsp.c' || echo '$(srcdir)/'`gstrtsp.c
+	$(am__mv) $(DEPDIR)/libgstrtsp_la-gstrtsp.Tpo $(DEPDIR)/libgstrtsp_la-gstrtsp.Plo
+#	source='gstrtsp.c' object='libgstrtsp_la-gstrtsp.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -c -o libgstrtsp_la-gstrtsp.lo `test -f 'gstrtsp.c' || echo '$(srcdir)/'`gstrtsp.c
+
+libgstrtsp_la-gstrtspext.lo: gstrtspext.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -MT libgstrtsp_la-gstrtspext.lo -MD -MP -MF $(DEPDIR)/libgstrtsp_la-gstrtspext.Tpo -c -o libgstrtsp_la-gstrtspext.lo `test -f 'gstrtspext.c' || echo '$(srcdir)/'`gstrtspext.c
+	$(am__mv) $(DEPDIR)/libgstrtsp_la-gstrtspext.Tpo $(DEPDIR)/libgstrtsp_la-gstrtspext.Plo
+#	source='gstrtspext.c' object='libgstrtsp_la-gstrtspext.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -c -o libgstrtsp_la-gstrtspext.lo `test -f 'gstrtspext.c' || echo '$(srcdir)/'`gstrtspext.c
+
+libgstrtsp_la-gstrtspsrc.lo: gstrtspsrc.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -MT libgstrtsp_la-gstrtspsrc.lo -MD -MP -MF $(DEPDIR)/libgstrtsp_la-gstrtspsrc.Tpo -c -o libgstrtsp_la-gstrtspsrc.lo `test -f 'gstrtspsrc.c' || echo '$(srcdir)/'`gstrtspsrc.c
+	$(am__mv) $(DEPDIR)/libgstrtsp_la-gstrtspsrc.Tpo $(DEPDIR)/libgstrtsp_la-gstrtspsrc.Plo
+#	source='gstrtspsrc.c' object='libgstrtsp_la-gstrtspsrc.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstrtsp_la_CFLAGS) $(CFLAGS) -c -o libgstrtsp_la-gstrtspsrc.lo `test -f 'gstrtspsrc.c' || echo '$(srcdir)/'`gstrtspsrc.c
 
 libgstvideoscaledmixer_la-gstvideoscaledmixer.lo: gstvideoscaledmixer.c
 	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgstvideoscaledmixer_la_CFLAGS) $(CFLAGS) -MT libgstvideoscaledmixer_la-gstvideoscaledmixer.lo -MD -MP -MF $(DEPDIR)/libgstvideoscaledmixer_la-gstvideoscaledmixer.Tpo -c -o libgstvideoscaledmixer_la-gstvideoscaledmixer.lo `test -f 'gstvideoscaledmixer.c' || echo '$(srcdir)/'`gstvideoscaledmixer.c

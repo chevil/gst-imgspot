@@ -22,6 +22,8 @@
 #ifndef __GST_I18N_PLUGIN_H__
 #define __GST_I18N_PLUGIN_H__
 
+#define GETTEXT_PACKAGE gettext
+
 #ifndef GETTEXT_PACKAGE
 #error You must define GETTEXT_PACKAGE before including this header.
 #endif

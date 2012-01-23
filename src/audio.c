@@ -32,8 +32,6 @@
 
 #include <gst/gststructure.h>
 
-void _ (void) {}
-
 /**
  * gst_audio_frame_byte_size:
  * @pad: the #GstPad to get the caps from
