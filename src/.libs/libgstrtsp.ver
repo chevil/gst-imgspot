@@ -1,0 +1,18 @@
+{ global:
+gst_plugin_desc;
+gst_rtp_dec_get_type;
+gst_rtsp_ext_list_after_send;
+gst_rtsp_ext_list_before_send;
+gst_rtsp_ext_list_configure_stream;
+gst_rtsp_ext_list_connect;
+gst_rtsp_ext_list_detect_server;
+gst_rtsp_ext_list_free;
+gst_rtsp_ext_list_get;
+gst_rtsp_ext_list_get_transports;
+gst_rtsp_ext_list_init;
+gst_rtsp_ext_list_parse_sdp;
+gst_rtsp_ext_list_receive_request;
+gst_rtsp_ext_list_setup_media;
+gst_rtsp_ext_list_stream_select;
+gst_rtspsrc_get_type;
+local: *; };
