@@ -1352,8 +1352,8 @@ gst_videoscaledmixer_blend_buffers (GstVideoScaledMixer * mix, GstBuffer * outbu
            }
            else
            {
-              rx = px;
-              ry = py;
+              rx = px-cpad->xpos;
+              ry = py-cpad->ypos;
            }
            *(pYOutputData+py*mix->out_width+px) = *(pYData+ry*cpad->in_width+rx)*(cpad->alpha);
            *(pUOutputData+(py>>1)*(mix->out_width>>1)+(px>>1)) = *(pUData+(ry>>1)*(cpad->in_width>>1)+(rx>>1));

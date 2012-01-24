@@ -152,7 +152,7 @@ gst_rtsp_src_buffer_mode_get_type (void)
 #define DEFAULT_PROTOCOLS        GST_RTSP_LOWER_TRANS_UDP | GST_RTSP_LOWER_TRANS_UDP_MCAST | GST_RTSP_LOWER_TRANS_TCP
 #define DEFAULT_DEBUG            FALSE
 #define DEFAULT_RETRY            20
-#define DEFAULT_TIMEOUT          5000000
+#define DEFAULT_TIMEOUT          2000000
 #define DEFAULT_TCP_TIMEOUT      20000000
 #define DEFAULT_LATENCY_MS       2000
 #define DEFAULT_CONNECTION_SPEED 0
@@ -2226,6 +2226,7 @@ static void
 on_timeout (GstElement * manager, guint session, guint32 ssrc, GstRTSPSrc * src)
 {
   GST_DEBUG_OBJECT (src, "SSRC %08x in session %u timed out", ssrc, session);
+  printf ("SSRC %08x in session %u timed out : %s\n", ssrc, session, src->conninfo.location );
 
   // gst_rtspsrc_do_stream_eos (src, session);
 }
