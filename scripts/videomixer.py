@@ -189,17 +189,17 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                return
 
             if newsource[:7] == "rtsp://" or newsource[:7] == "rtmp://":
+             mixer.uri[channel]=newsource
              if os.path.exists('/usr/bin/mplayer'):
                process = subprocess.Popen(['/usr/bin/mplayer','-endpos', '1', '-vo', 'null', '-ao', 'null', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                streamis=False
                pv = re.compile('VO:')
                pa = re.compile('AO:')
-               mixer.noaudio[channel]=True
+               mixer.noaudio[channel]=False
                for line in process.stdout:
                   if pv.match( line ):
                     sizes=line.split(' '); 
                     wihe=sizes[2].split('x'); 
-                    mixer.uri[channel]=newsource
                     mixer.owidth[channel]=int(wihe[0]) 
                     mixer.oheight[channel]=int(wihe[1])
                     self.send_response(200, 'OK')
@@ -209,19 +209,17 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                   if pa.match( line ):
                     mixer.noaudio[channel]=False
                if not streamis:
-                    mixer.uri[channel]=newsource
-                    self.send_response(400, 'Bad request')
+                    self.send_response(200, 'OK')
                     self.send_header('Content-type', 'html')
                     self.end_headers()
-                    return
              else:
                print "warning : cannot detect stream size ( is mplayer installed ?)"
-               self.send_response(400, 'Bad request')
+               self.send_response(200, 'OK')
                self.send_header('Content-type', 'html')
                self.end_headers()
-               return
 
             if newsource[:7] == "http://":
+             mixer.uri[channel]=newsource
              if os.path.exists('/usr/bin/mplayer'):
                process = subprocess.Popen(['/usr/bin/mplayer','-endpos', '1', '-vo', 'null', '-ao', 'null', newsource], shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                streamis=False
@@ -242,16 +240,14 @@ class jsCommandsHandler(BaseHTTPRequestHandler):
                   if pv.match( line ):
                     mixer.noaudio[channel]=False
                if not streamis:
-                    self.send_response(400, 'Bad request')
+                    self.send_response(200, 'OK')
                     self.send_header('Content-type', 'html')
                     self.end_headers()
-                    return
              else:
                print "warning : cannot detect remote video size ( is mplayer installed ?)"
-               self.send_response(400, 'Bad request')
+               self.send_response(200, 'OK')
                self.send_header('Content-type', 'html')
                self.end_headers()
-               return
 
             #check if the image exists
             if newsource[:8] == "still://":
@@ -750,13 +746,13 @@ class Gst4chMixer:
                     pipecmd += "gstrtpbin name=rtpbin "
 
                 if self.icehost != "" and nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! vorbisenc ! queue ! mux. "
+                    pipecmd += "autoaudiosrc ! queue ! audiorate ! audioconvert ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! audioconvert ! vorbisenc ! queue ! mux. "
                 elif self.hostname != "" and nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
+                    pipecmd += "autoaudiosrc ! queue ! audiorate ! audioconvert ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! audioconvert ! ffenc_aac ! rtpmp4apay ! rtpbin.send_rtp_sink_1 "
                 elif self.recfile != "" and nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! ffenc_aac ! queue ! mux. "
+                    pipecmd += "autoaudiosrc ! queue ! audiorate ! audioconvert ! adder name=audiomix ! tee name=audmixout ! queue ! autoaudiosink audmixout. ! queue ! audioconvert ! ffenc_aac ! queue ! mux. "
                 elif nosound==False:
-                    pipecmd += "autoaudiosrc ! adder name=audiomix ! queue ! autoaudiosink "
+                    pipecmd += "autoaudiosrc ! queue ! audiorate ! audioconvert ! adder name=audiomix ! queue ! autoaudiosink "
 
                 pipecmd += "videoscaledmixer name=mix sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 sink_0::width=%d sink_0::height=%d sink_0::ename=channel0 " % ( self.txsize, self.tysize )
 
@@ -787,7 +783,7 @@ class Gst4chMixer:
                     else:
                        pipecmd += "! fakesink "
 
-                pipecmd += "videotestsrc pattern=black name=background ! video/x-raw-yuv,width=%d,height=%d,format=(fourcc)I420,framerate=(fraction)15/1 ! mix.sink_0 " % ( self.txsize, self.tysize );
+                pipecmd += "videotestsrc pattern=black name=background ! queue ! videorate ! video/x-raw-yuv,format=(fourcc)I420,framerate=(fraction)25/2 ! videoscale name=videoscale0 ! video/x-raw-yuv,width=%d,height=%d ! ffmpegcolorspace ! mix.sink_0 " % ( self.txsize, self.tysize );
 
                 for i in range(0, nbchannels):
                     if ( self.uri[i] != "" ):
@@ -798,25 +794,25 @@ class Gst4chMixer:
                          detectstring = ""
 
                        if self.uri[i][:7] == "file://":
-                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
+                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! videorate ! video/x-raw-yuv,format=(fourcc)I420,framerate=(fraction)25/2 ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! ffmpegcolorspace ! mix.sink_%d " % ( i+1, self.uri[i][7:], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
                          if nosound==False and self.noaudio[i]==False: 
-                            pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
+                            pipecmd += " decodebin%d. ! queue ! audiorate ! audioconvert ! audiomix. "  % ( i+1 )
 
                        if self.uri[i][:8] == "still://":
-                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! ffmpegcolorspace !  %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! imagefreeze ! mix.sink_%d " % ( i+1, self.uri[i][8:], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
+                         pipecmd += " kfilesrc name=kfilesrc%d location=\"%s\" ! decodebin2 name=decodebin%d decodebin%d. ! queue ! videorate ! video/x-raw-yuv,format=(fourcc)I420,framerate=(fraction)25/2 ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! imagefreeze ! mix.sink_%d " % ( i+1, self.uri[i][8:], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
 
                        if self.uri[i][:9] == "device://":
-                         pipecmd += " v4l2src name=v4l2src%d device=%s ! ffmpegcolorspace ! %s video/x-raw-yuv,width=%d,height=%d ! videoscale name=videoscale%d ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, self.width[i], self.height[i], i+1, i+1 );
+                         pipecmd += " v4l2src name=v4l2src%d device=%s ! ffmpegcolorspace ! queue ! videorate ! video/x-raw-yuv,format=(fourcc)I420,framerate=(fraction)25/2 ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! ffmpegcolorspace ! mix.sink_%d " % ( i+1, self.uri[i][9:], detectstring, i+1, self.width[i], self.height[i], i+1 );
 
                        if self.uri[i][:7] == "http://":
-                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! ffmpegcolorspace ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
+                         pipecmd += " uridecodebin name=decodebin%d uri=\"%s\" decodebin%d. ! queue ! videorate ! video/x-raw-yuv,format=(fourcc)I420,framerate=(fraction)25/2 ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! ffmpegcolorspace ! mix.sink_%d " % ( i+1, self.uri[i], i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
                          if nosound==False and self.noaudio[i]==False: 
-                            pipecmd += " decodebin%d. ! audioresample ! audiomix. " % ( i+1 ) 
+                            pipecmd += " decodebin%d. ! queue ! audiorate ! audioconvert ! audiomix. " % ( i+1 ) 
 
                        if self.uri[i][:7] == "rtsp://" or self.uri[i][:7] == "rtmp://":
-                         pipecmd += " uridecodebin uri=\"%s\" name=decodebin%d decodebin%d. ! ffmpegcolorspace ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
+                         pipecmd += " uridecodebin uri=\"%s\" name=decodebin%d decodebin%d. ! queue ! videorate ! video/x-raw-yuv,format=(fourcc)I420,framerate=(fraction)25/2 ! %svideoscale name=videoscale%d ! video/x-raw-yuv,width=%d,height=%d ! ffmpegcolorspace ! mix.sink_%d " % ( self.uri[i], i+1, i+1, detectstring, i+1, self.width[i], self.height[i], i+1 );
                          if nosound==False and self.noaudio[i]==False: 
-                            pipecmd += " decodebin%d. ! audioresample ! audiomix. "  % ( i+1 )
+                            pipecmd += " decodebin%d. ! queue ! audiorate ! audioconvert ! audiomix. "  % ( i+1 )
 
                 if ( self.icehost != "" ):
                     pipecmd += " oggmux name=mux ! queue ! shout2send ip=%s port=%d mount=/%s password=%s " % ( self.icehost, self.iceport, self.icemount, self.icepass );

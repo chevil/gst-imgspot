@@ -1506,7 +1506,7 @@ gst_videoscaledmixer_sink_prepare_buffer (GstCollectPads2 * pads,
 
   end_time = GST_BUFFER_DURATION (buf);
   if (end_time == -1)
-    end_time = gst_util_uint64_scale_int (GST_SECOND, pad->fps_d, pad->fps_n);
+     end_time = gst_util_uint64_scale_int (GST_SECOND, pad->fps_d, pad->fps_n);
   if (end_time == -1)
     return GST_FLOW_OK;
 

@@ -1799,6 +1799,7 @@ gst_collect_pads2_chain (GstPad * pad, GstBuffer * buffer)
 
   if (prepare_buffer_func) {
     ret = prepare_buffer_func (pads, data, buffer, prepare_buffer_user_data);
+    GST_DEBUG_OBJECT (pads, "Preparing buffer returned %d", ret);
     if (ret == GST_COLLECT_PADS2_FLOW_DROP) {
       GST_DEBUG_OBJECT (pads, "Dropping buffer as requested");
       ret = GST_FLOW_OK;
@@ -1814,6 +1815,7 @@ gst_collect_pads2_chain (GstPad * pad, GstBuffer * buffer)
   if (GST_COLLECT_PADS2_STATE_IS_SET (data, GST_COLLECT_PADS2_STATE_WAITING))
     pads->queuedpads++;
   buffer_p = &data->buffer;
+  GST_DEBUG_OBJECT (pads, "Replacing buffer");
   gst_buffer_replace (buffer_p, buffer);
 
   /* update segment last position if in TIME */
@@ -1828,6 +1830,7 @@ gst_collect_pads2_chain (GstPad * pad, GstBuffer * buffer)
   do {
     /* Check if our collected condition is matched and call the collected
      * function if it is */
+    GST_DEBUG_OBJECT (pads, "Checking buffer collected");
     ret = gst_collect_pads2_check_collected (pads);
     /* when an error occurs, we want to report this back to the caller ASAP
      * without having to block if the buffer was not popped */
